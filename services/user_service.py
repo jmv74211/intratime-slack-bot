@@ -1,7 +1,9 @@
 import pymongo
 from flask import Flask, jsonify, request
+from bson import json_util
+import json
 
-myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+myclient = pymongo.MongoClient("mongodb://172.16.1.31:27017/")
 
 intratime_db = myclient["intratime_db"]
 
@@ -37,7 +39,7 @@ def list_users():
   for user in users_collection.find():
     user_list.append(user)
 
-  return jsonify({'message': 'INFO: Users found', 'data': repr(user_list)}), 200
+  return jsonify({'message': 'INFO: Users found', 'data': json.loads(json_util.dumps(user_list))}), 200
 
 ################################################################################################
 
@@ -47,9 +49,9 @@ def get_user_info(user_id):
   if not check_user_exist(user_id):
     return jsonify({'message': 'ERROR: The user does not exist'}), 200
 
-  info_data = users_collection.find({"user_id": user_id})
+  info_data = users_collection.find_one({"user_id": user_id})
 
-  return jsonify({'message': 'INFO: Users found', 'data': repr(info_data[0])}), 200
+  return jsonify({'message': 'INFO: User found', 'data': json.loads(json_util.dumps(info_data))}), 200
 
 ################################################################################################
 
@@ -59,16 +61,16 @@ def add_user():
   try:
     data = request.get_json()
   except:
-    return jsonify({'status': 'ERROR: Bad data request'}), 400
+    return jsonify({'message': 'ERROR: Bad data request'}), 400
 
   if not validate_user_data(data):
-    return jsonify({'status': 'ERROR: Bad data request'}), 400
+    return jsonify({'message': 'ERROR: Bad data request'}), 400
 
   if check_user_exist(data['user_id']):
-    return jsonify({'status': 'INFO: User already exists'}), 200
+    return jsonify({'message': 'INFO: User already exists'}), 200
 
   insert_request = users_collection.insert_one({"user_id": data['user_id'], "username": data['username'],
-    "password": data['password']})
+    "email": data['email'], "password": data['password']})
 
   if insert_request.inserted_id is None:
     return jsonify({'message': 'ERROR: User could be not inserted'}), 400
@@ -90,6 +92,7 @@ def delete_user(user_id):
 
   return jsonify({'message': 'INFO: Deleted'}), 200
 
+
 ################################################################################################
 
 @app.route("/user/<user_id>", methods=["PUT"])
@@ -98,18 +101,18 @@ def update_user(user_id):
   try:
     data = request.get_json()
   except:
-    return jsonify({'status': 'ERROR: Bad data request'}), 400
+    return jsonify({'message': 'ERROR: Bad data request'}), 400
 
   if not validate_user_data(data):
-    return jsonify({'status': 'ERROR: Bad data request'}), 400
+    return jsonify({'message': 'ERROR: Bad data request'}), 400
 
   if not check_user_exist(user_id):
-    return jsonify({'message': 'WARNING: The user does not exist'}), 202
+    return jsonify({'message': 'ERROR: The user does not exist'}), 202
 
   update_request = users_collection.update_one({"user_id": user_id}, {"$set": data})
 
   if update_request.modified_count <= 0:
-    return jsonify({'message': 'ERROR: User could be not updated'}), 400
+    return jsonify({'message': 'ERROR: User could be not updated. Maybe you wrote the same credentials'}), 400
 
   return jsonify({'message': 'INFO: Updated'}), 200
 
@@ -117,10 +120,3 @@ def update_user(user_id):
 
 if __name__ == "__main__":
   app.run(host="0.0.0.0", port=5000, debug=True)
-
-
-
-
-
-
-
