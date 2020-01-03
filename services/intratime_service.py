@@ -63,12 +63,11 @@ def get_random_coordinates():
   return wazuh_location_w, wazuh_location_n
 
 #-------------------------------------------------------------------------------
-
 # Return codes: STRING_TOKEN: OK, -1: DATA_ERROR, -2: REQUEST_ERROR
-def get_login_token(user, password):
+def get_login_token(email, password):
 
   login_api_url = "{0}{1}".format(INTRATIME_API_URL, INTRATIME_API_LOGIN_PATH)
-  payload="user={0}&pin={1}".format(user, password)
+  payload="user={0}&pin={1}".format(email, password)
 
   try:
     request = requests.post(login_api_url, data=payload, headers=INTRATIME_API_HEADER)
@@ -86,12 +85,11 @@ def get_login_token(user, password):
 
 #-------------------------------------------------------------------------------
 
-def check_user_credentials(user, password):
-  token = get_login_token(user, password)
+def check_user_credentials(email, password):
+  token = get_login_token(email, password)
   return token != -1 and token != -2
 
 #-------------------------------------------------------------------------------
-
 # Return codes: 0: OK, -1: REGISTRATION_FAIL, 2: REQUEST_ERROR
 def clocking(action, token):
 
@@ -130,10 +128,10 @@ def check_credentials():
   except:
     data = None
 
-  if data is None or not 'user' in data or not 'password' in data:
+  if data is None or not 'email' in data or not 'password' in data:
     return jsonify({'message': 'ERROR: Bad data'}), 400
 
-  credentials_ok = check_user_credentials(data['user'], data['password'])
+  credentials_ok = check_user_credentials(data['email'], data['password'])
 
   if credentials_ok:
     return jsonify({'message': 'SUCCESS'}), 200
@@ -149,10 +147,10 @@ def register():
   except:
     data = None
 
-  if data is None or not 'user' in data or not 'password' in data or 'action' in data:
+  if data is None or not 'email' in data or not 'password' in data or not 'action' in data:
     return jsonify({'message': 'ERROR: Bad data'}), 400
 
-  token = get_login_token(data['user'], data['password'])
+  token = get_login_token(data['email'], data['password'])
 
   if token == -1:
     return jsonify({'message': 'WARNING: Incorrect credentials'}), 202
