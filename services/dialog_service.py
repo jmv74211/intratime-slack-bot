@@ -6,7 +6,8 @@ import urllib.parse
 
 app = Flask(__name__)
 SLACK_DIALOG_API_URL = 'https://slack.com/api/dialog.open'
-INTRATIME_SERVICE_URL = 'http://85.136.33.194:4000'
+INTRATIME_SERVICE_URL = 'http://127.0.0.1:4000'
+USER_SERVICE_URL = 'http://127.0.0.1:5000'
 
 ################################################################################################
 
@@ -24,11 +25,11 @@ def args_decode(data):
 
 ################################################################################################
 
-def validate_credentials(user, password):
+def validate_credentials(email, password):
 
   check_credentials_user_url = INTRATIME_SERVICE_URL + '/check_user_credentials'
-  payload = {'user': user, 'password': password }
-  headers = {'content-type': 'application/json' }
+  payload = {'email': email, 'password': password}
+  headers = {'content-type': 'application/json'}
 
   request = requests.get(check_credentials_user_url, json=payload, headers=headers)
 
@@ -44,6 +45,121 @@ def validate_credentials(user, password):
 
 ################################################################################################
 
+def check_user_already_exists(user_id):
+
+  check_user_already_exists_url = USER_SERVICE_URL + "/user/{}".format(user_id)
+  request = requests.get(check_user_already_exists_url)
+
+  if request.status_code == 200:
+    if request.json()['message'] == 'INFO: User found':
+      return True
+    else:
+      return False
+  else:
+    # Log error
+    print("REQUEST ERROR = {} - {}".format(request.text, request.status_code))
+    return False
+
+################################################################################################
+
+def get_user_credentials(user_id):
+
+  get_user_credentials_url = USER_SERVICE_URL + "/user/{}".format(user_id)
+  request = requests.get(get_user_credentials_url)
+
+  if request.status_code == 200:
+    if request.json()['message'] == 'INFO: User found':
+      data = request.json()['data']
+      return data
+    else:
+      return None
+  else:
+    # Log error
+    print("REQUEST ERROR = {} - {}".format(request.text, request.status_code))
+    return None
+
+################################################################################################
+
+def validate_user_data(user_id):
+
+  user_data = get_user_credentials(user_id)
+
+  return validate_credentials(user_data['email'], user_data['password'])
+
+################################################################################################
+
+def add_user(user_id, username, email, password):
+
+  add_user_url = USER_SERVICE_URL + '/user'
+  payload = {'user_id': user_id, 'username': username, 'email': email, 'password': password}
+  headers = {'content-type': 'application/json'}
+
+  request = requests.post(add_user_url, json=payload, headers=headers)
+  message = request.json()['message']
+
+  if request.status_code == 201:
+    return True, message
+  else:
+    return False, message
+
+################################################################################################
+
+def update_user(user_id, username, email, password):
+
+  update_user_url = USER_SERVICE_URL + "/user/{}".format(user_id)
+  payload = {'user_id': user_id, 'username': username, 'email': email, 'password': password}
+  headers = {'content-type': 'application/json'}
+
+  request = requests.put(update_user_url, json=payload, headers=headers)
+  message = request.json()['message']
+
+  if request.status_code == 200:
+    return True, message
+  else:
+    return False, message
+
+################################################################################################
+
+def delete_user(user_id):
+
+  delete_user_url = USER_SERVICE_URL + "/user/{}".format(user_id)
+  payload = {'user_id': user_id}
+  headers = {'content-type': 'application/json'}
+
+  request = requests.delete(delete_user_url, json=payload, headers=headers)
+  message = request.json()['message']
+
+  if request.status_code == 200:
+    return True, message
+  else:
+    return False, message
+
+################################################################################################
+
+def register_intratime_data(email, password, action):
+
+  register_intratime_data_url = INTRATIME_SERVICE_URL + '/register'
+  payload = {'email': email, 'password': password, 'action': action}
+  headers = {'content-type': 'application/json'}
+
+  request = requests.post(register_intratime_data_url, json=payload, headers=headers)
+  message = request.json()['message']
+
+  if request.status_code == 200:
+    return True, ''
+  else:
+    return False, message
+
+################################################################################################
+
+def post_ephemeral_message(message, response_url):
+
+  payload = {'text': message, 'response_type': 'ephemeral'}
+  headers = {'content-type': 'application/json'}
+  requests.post(response_url, json=payload, headers=headers)
+
+################################################################################################
+
 @app.route("/interactive", methods=["POST"])
 def get_interactive_data():
   try:
@@ -52,33 +168,89 @@ def get_interactive_data():
     return jsonify({'status': 'ERROR: Bad data request'}), 400
 
   data = json.loads(data.replace('payload=','')) # Clean string to convert it to json format
-  print("data = {}".format(data))
-
-  print("Callback_id = {}".format(data['callback_id']))
 
   if data['callback_id'] == 'sign_up':
+
+    # Check if the user already exists
+    if check_user_already_exists(data['user']['id']):
+      return jsonify({'errors': [ {'name': 'email', 'error': 'Sorry, you are already registered'},]}), 200
+
     # Validate credentials
     if not validate_credentials(data['submission']['email'], data['submission']['password']):
       return jsonify({'errors': [ {'name': 'email', 'error': 'Sorry, the username and/or password are not correct'},
         {'name': 'password', 'error': 'Sorry, the username and/or password are not correct'}]}), 200
 
     # Create new user in user service
+    add_user_data = add_user(data['user']['id'], data['user']['name'], data['submission']['email'],
+      data['submission']['password'])
+
+    if not add_user_data[0]: # If user is not added successfully
+      post_ephemeral_message(":x: *Sorry, the user could not be created* :x: \n \
+        {}".format(add_user_data[1]), data['response_url'])
+      return make_response("", 200)
+
+    post_ephemeral_message(":heavy_check_mark: *User added successfully* :heavy_check_mark: \n \
+      Now you can make registrations in intratime using `/register` command \n \
+      You can also update your user data (`/update`) or delete it(`/delete`)", data['response_url'])
+
   elif data['callback_id'] == 'register':
-    print("Action = {}".format(data['submission']['action']))
+
     # Validate credentials
+    if not validate_user_data(data['user']['id']):
+      return jsonify({'errors': [ {'name': 'email', 'error': 'Sorry, the username and/or password from database data are not correct'},
+        {'name': 'password', 'error': 'Sorry, the username and/or password from database data are not correct'}]}), 200
     # Get user data from user service
-    # Register in intratime service
+    user_data = get_user_credentials(data['user']['id'])
+
+     # Register in intratime service
+    register_ok = register_intratime_data(user_data['email'], user_data['password'], data['submission']['action'])
+    if not register_ok[0]:
+      post_ephemeral_message(":x: *Sorry, the request could not be registered* :x: \n \
+        {}".format(register_ok[1]), data['response_url'])
+      return make_response("", 200)
+
+    #¿Some kind of check?
+    post_ephemeral_message(":heavy_check_mark: *Successful registration* :heavy_check_mark:", data['response_url'])
+
   elif data['callback_id'] == 'update_user':
+
     # Check if user already registered
+    if not check_user_already_exists(data['user']['id']):
+      return jsonify({'errors': [ {'name': 'email', 'error': 'Sorry, you are not registered'},]}), 200
+
     # Validate data
+    if not validate_credentials(data['submission']['email'], data['submission']['password']):
+      return jsonify({'errors': [ {'name': 'email', 'error': 'Sorry, the username and/or password are not correct'},
+        {'name': 'password', 'error': 'Sorry, the username and/or password are not correct'}]}), 200
+
     # Update user in user service
-    print("user_id = {}".format(data['user']['id']))
-    print("email = {}".format(data['submission']['email']))
-    print("password = {}".format(data['submission']['password']))
+    update_user_data = update_user(data['user']['id'], data['user']['name'], data['submission']['email'],
+      data['submission']['password'])
+
+    if not update_user_data[0]: # If user is not updated successfully
+      post_ephemeral_message(":x: *Sorry, the user could not be updated* :x: \n \
+        {}".format(update_user_data[1]), data['response_url'])
+      return make_response("", 200)
+
+    post_ephemeral_message(":heavy_check_mark: *User updated successfully* :heavy_check_mark:",
+      data['response_url'])
+
   elif data['callback_id'] == 'delete_user':
-    # Check if user already registered
+    if not check_user_already_exists(data['user']['id']):
+      return jsonify({'errors': [ {'name': 'delete', 'error': 'Sorry, you are not registered'},]}), 200
+
     # Delete user in user service
-    print("Action = {}".format(data['submission']['delete']))
+    if data['submission']['delete'] == 'confirm_delete':
+      delete_user_data = delete_user(data['user']['id'])
+
+      if not delete_user_data[0]: # If user is not deleted successfully
+        post_ephemeral_message(":x: *Sorry, the user could not be deleted* :x: \n \
+          {}".format(delete_user_data[1]), data['response_url'])
+        return make_response("", 200)
+
+    if data['submission']['delete'] == 'confirm_delete':
+      post_ephemeral_message(":heavy_check_mark: *User deleted successfully* :heavy_check_mark:",
+        data['response_url'])
 
   return make_response("", 200)
 
@@ -141,7 +313,6 @@ def get_api_data(data, callback_id):
       ]
     }
   elif callback_id == 'update_user':
-    # Here I can query user data and set current value fields
     dialog = {
       "title": "Intratime: Update user",
       "submit_label": "Submit",
@@ -179,7 +350,7 @@ def get_api_data(data, callback_id):
             },
             {
               "label": "Yes",
-              "value": "delete"
+              "value": "confirm_delete"
             }
 
           ]
@@ -201,14 +372,13 @@ def get_api_data(data, callback_id):
 ################################################################################################
 
 @app.route("/sign_up", methods=["POST"])
-def sign_up():
+def sign_up_api():
   try:
     data = request.get_data().decode("utf-8")
   except:
     return jsonify({'status': 'ERROR: Bad data request'}), 400
 
   api_data = get_api_data(data, 'sign_up')
-
   requests.post(SLACK_DIALOG_API_URL, data=api_data)
 
   return make_response("", 200)
@@ -216,7 +386,7 @@ def sign_up():
 ################################################################################################
 
 @app.route("/register", methods=["POST"])
-def register():
+def register_api():
   try:
     data = request.get_data().decode("utf-8")
   except:
@@ -230,7 +400,7 @@ def register():
 ################################################################################################
 
 @app.route("/update_user", methods=["POST"])
-def update_user():
+def update_user_api():
   try:
     data = request.get_data().decode("utf-8")
   except:
@@ -244,16 +414,15 @@ def update_user():
 ################################################################################################
 
 @app.route("/delete_user", methods=["POST"])
-def delete_user():
+def delete_user_api():
   try:
     data = request.get_data().decode("utf-8")
   except:
     return jsonify({'status': 'ERROR: Bad data request'}), 400
-  print("antes")
+
   api_data = get_api_data(data, 'delete_user')
-  print("despues = {}".format(api_data))
-  req = requests.post(SLACK_DIALOG_API_URL, data=api_data)
-  print("status code = {}".format(req.json()))
+  requests.post(SLACK_DIALOG_API_URL, data=api_data)
+
   return make_response("", 200)
 
 #######################################  MAIN  ##################################################
