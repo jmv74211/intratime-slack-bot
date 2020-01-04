@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import urllib.parse
+import lib
 
 app = Flask(__name__)
 SLACK_DIALOG_API_URL = 'https://slack.com/api/dialog.open'
@@ -17,7 +18,7 @@ def args_decode(data):
   output = {}
   for item in data:
     aux = item.split('=')
-    output[aux[0]]=[aux[1]]
+    output[aux[0]] = [aux[1]]
 
   output = json.loads(json.dumps(output).replace(']','').replace('[',''))
 
@@ -70,6 +71,8 @@ def get_user_credentials(user_id):
   if request.status_code == 200:
     if request.json()['message'] == 'INFO: User found':
       data = request.json()['data']
+      # Decrypt the password
+      data['password'] = lib.decrypt(data['password'].encode(lib.ENCODING)).decode('utf-8')
       return data
     else:
       return None
@@ -209,7 +212,6 @@ def get_interactive_data():
         {}".format(register_ok[1]), data['response_url'])
       return make_response("", 200)
 
-    #¿Some kind of check?
     post_ephemeral_message(":heavy_check_mark: *Successful registration* :heavy_check_mark:", data['response_url'])
 
   elif data['callback_id'] == 'update_user':
@@ -298,14 +300,14 @@ def get_api_data(data, callback_id):
       "callback_id": "sign_up",
       "elements": [
         {
-          "label": "Email Address",
+          "label": "Intratime email",
           "name": "email",
           "type": "text",
           "subtype": "email",
           "placeholder": "you@example.com"
         },
         {
-          "label": "Password",
+          "label": "Intratime password",
           "name": "password",
           "type": "text",
           "placeholder": "password"

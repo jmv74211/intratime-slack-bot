@@ -2,6 +2,7 @@ import pymongo
 from flask import Flask, jsonify, request
 from bson import json_util
 import json
+import lib
 
 myclient = pymongo.MongoClient("mongodb://172.16.1.31:27017/")
 
@@ -69,8 +70,10 @@ def add_user():
   if check_user_exist(data['user_id']):
     return jsonify({'message': 'INFO: User already exists'}), 200
 
+  ciphered_password = lib.encrypt(data['password']).decode(lib.ENCODING)
+
   insert_request = users_collection.insert_one({"user_id": data['user_id'], "username": data['username'],
-    "email": data['email'], "password": data['password']})
+    "email": data['email'], "password": ciphered_password})
 
   if insert_request.inserted_id is None:
     return jsonify({'message': 'ERROR: User could be not inserted'}), 400
@@ -108,6 +111,8 @@ def update_user(user_id):
 
   if not check_user_exist(user_id):
     return jsonify({'message': 'ERROR: The user does not exist'}), 202
+
+  data['password'] = lib.encrypt(data['password']).decode(lib.ENCODING)
 
   update_request = users_collection.update_one({"user_id": user_id}, {"$set": data})
 
