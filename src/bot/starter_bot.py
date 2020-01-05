@@ -13,7 +13,7 @@ response = client.chat_postMessage(
     channel='UPE8LJ72S',
     text="Hello world!")
 assert response["ok"]
-assert response["message"]["text"] == "Hello world!" 
+assert response["message"]["text"] == "Hello world!"
  """
 
 
@@ -59,21 +59,22 @@ def post_thread_message(web_client, channel_id, text, thread_ts):
   )
 
 def check_patterns(web_client, channel_id, thread_ts, text_data):
+
   for item in patterns['in']:
       if pre_process_text(item) in text_data:
-        post_thread_message(web_client, channel_id, "IN", thread_ts)  
+        post_thread_message(web_client, channel_id, "IN", thread_ts)
 
   for item in patterns['pause']:
     if pre_process_text(item) in text_data:
-      post_thread_message(web_client, channel_id, "PAUSE", thread_ts)  
+      post_thread_message(web_client, channel_id, "PAUSE", thread_ts)
 
   for item in patterns['return']:
     if pre_process_text(item) in text_data:
-      post_thread_message(web_client, channel_id, "RETURN", thread_ts)  
-  
+      post_thread_message(web_client, channel_id, "RETURN", thread_ts)
+
   for item in patterns['leave']:
     if pre_process_text(item) in text_data:
-      post_thread_message(web_client, channel_id, "LEAVE", thread_ts)  
+      post_thread_message(web_client, channel_id, "LEAVE", thread_ts)
 
 @slack.RTMClient.run_on(event='message')
 def check_pattern_event(**payload):
@@ -83,7 +84,6 @@ def check_pattern_event(**payload):
     text_data = pre_process_text(data.get('text',''))
     channel_id = data['channel']
     thread_ts = data['ts']
-    #user = data['user']
 
     check_patterns(web_client, channel_id, thread_ts, text_data)
 

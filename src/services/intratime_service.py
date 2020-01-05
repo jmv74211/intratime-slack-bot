@@ -6,7 +6,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-INTRATIME_API_URL = "http://newapi.intratim"
+INTRATIME_API_URL = "http://newapi.intratime.es"
 INTRATIME_API_LOGIN_PATH =  "/api/user/login"
 INTRATIME_API_CLOCKING_PATH = "/api/user/clocking"
 INTRATIME_API_APPLICATION_HEADER = "Accept: application/vnd.apiintratime.v1+json"

@@ -3,7 +3,10 @@ import json
 import os
 import requests
 import urllib.parse
-import lib
+import sys
+sys.path.insert(0, "../lib")
+import utils
+
 
 app = Flask(__name__)
 SLACK_DIALOG_API_URL = 'https://slack.com/api/dialog.open'
@@ -89,7 +92,7 @@ def get_user_credentials(user_id):
     if request.json()['message'] == 'INFO: User found':
       data = request.json()['data']
       # Decrypt the password
-      data['password'] = lib.decrypt(data['password'].encode(lib.ENCODING)).decode('utf-8')
+      data['password'] = utils.decrypt(data['password'].encode(utils.ENCODING)).decode('utf-8')
       return data
     else:
       return None
