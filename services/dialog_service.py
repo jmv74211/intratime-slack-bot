@@ -9,6 +9,8 @@ app = Flask(__name__)
 SLACK_DIALOG_API_URL = 'https://slack.com/api/dialog.open'
 INTRATIME_SERVICE_URL = 'http://127.0.0.1:4000'
 USER_SERVICE_URL = 'http://127.0.0.1:5000'
+LOGGER_SERVICE_URL = 'http://127.0.0.1:7000'
+MODULE_NAME = 'Dialog-service'
 
 ################################################################################################
 
@@ -26,6 +28,21 @@ def args_decode(data):
 
 ################################################################################################
 
+def log(function, log_type, message):
+
+  log_data_url = LOGGER_SERVICE_URL + '/log'
+  payload = {'module': MODULE_NAME, 'function': function, 'type': log_type, 'message': message}
+  headers = {'content-type': 'application/json'}
+
+  request = requests.post(log_data_url, json=payload, headers=headers)
+
+  if request.status_code != 200:
+    return False
+
+  return True
+
+################################################################################################
+
 def validate_credentials(email, password):
 
   check_credentials_user_url = INTRATIME_SERVICE_URL + '/check_user_credentials'
@@ -40,8 +57,8 @@ def validate_credentials(email, password):
     else:
       return False
   else:
-    # Log error
-    print("REQUEST ERROR = {} - {}".format(request.text, request.status_code))
+    log("validate_credentials", "ERROR", "Request error. Could not connect with intratime service. \
+      Status code = {0}. Message = {}".format(request.status_code, request.text))
     return False
 
 ################################################################################################
@@ -57,8 +74,8 @@ def check_user_already_exists(user_id):
     else:
       return False
   else:
-    # Log error
-    print("REQUEST ERROR = {} - {}".format(request.text, request.status_code))
+    log("check_user_already_exists", "ERROR", "Request error. Could not connect with user service. \
+      Status code = {0}. Message = {}".format(request.status_code, request.text))
     return False
 
 ################################################################################################
@@ -77,8 +94,8 @@ def get_user_credentials(user_id):
     else:
       return None
   else:
-    # Log error
-    print("REQUEST ERROR = {} - {}".format(request.text, request.status_code))
+    log("get_user_credentials", "ERROR", "Request error. Could not connect with user service. \
+      Status code = {0}. Message = {}".format(request.status_code, request.text))
     return None
 
 ################################################################################################
@@ -360,8 +377,9 @@ def get_api_data(data, callback_id):
       ]
     }
   else:
-    # Handle callback error
-    pass
+    log("get_api_data", "ERROR", "Callback id does not exist. Actual value = {}"
+      .format(callback_id))
+    return None
 
   api_data = {
     "token": os.environ['SLACK_API_TOKEN'],
