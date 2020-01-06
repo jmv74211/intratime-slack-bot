@@ -34,6 +34,12 @@ def validate_user_data(data):
 
 ################################### API FUNCTIONS ##############################################
 
+@app.route("/echo", methods=['GET'])
+def echo_api():
+  return jsonify({'message': 'Alive'})
+
+################################################################################################
+
 @app.route("/user", methods=["GET"])
 def list_users():
 

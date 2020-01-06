@@ -6,7 +6,7 @@ import urllib.parse
 import sys
 sys.path.insert(0, "../lib")
 import utils
-
+from functools import wraps
 
 app = Flask(__name__)
 SLACK_DIALOG_API_URL = 'https://slack.com/api/dialog.open'
@@ -28,6 +28,44 @@ def args_decode(data):
   output = json.loads(json.dumps(output).replace(']','').replace('[',''))
 
   return output
+
+################################################################################################
+
+def services_are_running(f):
+  @wraps(f)
+  def decorated(*args, **kwargs):
+    data = args_decode(urllib.parse.unquote(request.get_data().decode('utf-8')))
+    failed = False
+
+    # Check intratime service
+    try:
+      requests.get('http://127.0.0.1:4000/echo')
+    except:
+      failed = True
+      post_ephemeral_message(':x: *Intratime service is down* :x: \n \
+        Please contact the administrator', data['response_url'])
+
+    # Check user service
+    try:
+      requests.get('http://127.0.0.1:5000/echo')
+    except:
+      failed = True
+      post_ephemeral_message(':x: *User service is down* :x: \n \
+        Please contact the administrator', data['response_url'])
+
+    # Log service
+    try:
+      requests.get('http://127.0.0.1:7000/echo')
+    except:
+      post_ephemeral_message(':warning: *Logger service is down* :warning: \n \
+        Please notify the administrator', data['response_url'])
+
+    if failed:
+      return make_response("", 200)
+
+    return f(*args, **kwargs)
+
+  return decorated
 
 ################################################################################################
 
@@ -395,6 +433,7 @@ def get_api_data(data, callback_id):
 ################################################################################################
 
 @app.route("/sign_up", methods=["POST"])
+@services_are_running
 def sign_up_api():
   try:
     data = request.get_data().decode("utf-8")

@@ -130,6 +130,12 @@ def clocking(action, token):
 #                              API FUNCTIONS                                   #
 #------------------------------------------------------------------------------#
 
+@app.route("/echo", methods=['GET'])
+def echo_api():
+  return jsonify({'message': 'Alive'})
+
+################################################################################################
+
 @app.route("/check_user_credentials", methods=["GET"])
 def check_credentials():
 
