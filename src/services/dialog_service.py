@@ -14,6 +14,7 @@ INTRATIME_SERVICE_URL = 'http://127.0.0.1:4000'
 USER_SERVICE_URL = 'http://127.0.0.1:5000'
 LOGGER_SERVICE_URL = 'http://127.0.0.1:7000'
 MODULE_NAME = 'Dialog-service'
+ADMIN_USER = 'US6HV86ES'
 
 ################################################################################################
 
@@ -42,23 +43,26 @@ def services_are_running(f):
       requests.get('http://127.0.0.1:4000/echo')
     except:
       failed = True
-      post_ephemeral_message(':x: *Intratime service is down* :x: \n \
-        Please contact the administrator', data['response_url'])
+      message = ':x: *Intratime service is down* :x: \n Please contact the administrator'
+      post_ephemeral_message(message, data['response_url'])
+      post_private_message(message, ADMIN_USER)
 
     # Check user service
     try:
       requests.get('http://127.0.0.1:5000/echo')
     except:
       failed = True
-      post_ephemeral_message(':x: *User service is down* :x: \n \
-        Please contact the administrator', data['response_url'])
+      message = ':x: *User service is down* :x: \n Please contact the administrator'
+      post_ephemeral_message(message, data['response_url'])
+      post_private_message(message, ADMIN_USER)
 
     # Log service
     try:
       requests.get('http://127.0.0.1:7000/echo')
     except:
-      post_ephemeral_message(':warning: *Logger service is down* :warning: \n \
-        Please notify the administrator', data['response_url'])
+      message = ':warning: *Logger service is down* :warning: \n Please notify the administrator'
+      post_ephemeral_message(message, data['response_url'])
+      post_private_message(message, ADMIN_USER)
 
     if failed:
       return make_response("", 200)
@@ -210,6 +214,15 @@ def register_intratime_data(email, password, action):
     return True, ''
   else:
     return False, message
+
+################################################################################################
+
+def post_private_message(message, channel):
+
+  payload = {'text': message, 'channel': channel, 'as_user': True}
+  bot_token = "Bearer {}".format(os.environ['SLACK_API_TOKEN'])
+  headers = {'content-type': 'application/json;charset=iso-8859-1', 'Authorization': bot_token}
+  requests.post('https://slack.com/api/chat.postMessage', json=payload, headers=headers)
 
 ################################################################################################
 
