@@ -1,8 +1,11 @@
 from Crypto import Random
 from Crypto.Cipher import AES
 import os
+import sys
+sys.path.insert(0, '../config')
+import settings
 
-CIPHER_KEY = os.environ['cipher_key'].encode()
+CIPHER_KEY = settings.CIPHER_KEY.encode()
 ENCODING = 'cp437'
 
 ################################################################################################

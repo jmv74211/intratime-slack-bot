@@ -1,0 +1,35 @@
+import sys
+sys.path.insert(0, '../config')
+import settings
+
+# URLS
+DIALOG_SERVICE_URL = "http://{}:{}".format(settings.DIALOG_SERVICE_HOST, settings.DIALOG_SERVICE_PORT)
+INTRATIME_SERVICE_URL = "http://{}:{}".format(settings.INTRATIME_SERVICE_HOST, settings.INTRATIME_SERVICE_PORT)
+USER_SERVICE_URL = "http://{}:{}".format(settings.USER_SERVICE_HOST, settings.USER_SERVICE_PORT)
+LOGGER_SERVICE_URL = "http://{}:{}".format(settings.LOGGER_SERVICE_HOST, settings.LOGGER_SERVICE_PORT)
+
+# MODULES_NAME
+INTRATIME_MODULE_NAME = 'Intratime_service'
+USER_MODULE_NAME  = 'User_service'
+LOGGER_MODULE_NAME = 'Logger_service'
+DIALOG_MODULE_NAME = 'Dialog_service'
+
+# SLACK
+SLACK_POST_MESSAGE_URL = 'https://slack.com/api/chat.postMessage'
+SLACK_OPEN_DIALOG_URL = 'https://slack.com/api/dialog.open'
+
+# DIALOG SERVICE
+DIALOG_SERVICE_ECHO_REQUEST = "{}/echo".format(DIALOG_SERVICE_URL)
+
+# USER SERVICE
+USER_SERVICE_ECHO_REQUEST = "{}/echo".format(USER_SERVICE_URL)
+USER_SERVICE_MANAGE_REQUEST = "{}/user".format(USER_SERVICE_URL)
+
+# INTRATIME SERVICE
+INTRATIME_SERVICE_ECHO_REQUEST = "{}/echo".format(INTRATIME_SERVICE_URL)
+INTRATIME_SERVICE_CHECK_CREDENTIALS_REQUEST = "{}/check_user_credentials".format(INTRATIME_SERVICE_URL)
+INTRATIME_SERVICE_REGISTER_REQUEST = "{}/register".format(INTRATIME_SERVICE_URL)
+
+# LOGGER SERVICE
+LOGGER_SERVICE_ECHO_REQUEST = "{}/echo".format(LOGGER_SERVICE_URL)
+LOGGER_SERVICE_POST_LOG_REQUEST = "{}/log".format(LOGGER_SERVICE_URL)
