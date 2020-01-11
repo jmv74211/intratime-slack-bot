@@ -1,0 +1,23 @@
+{
+  "in": [
+    "^buenos dias$",
+    "^hola buenos días$",
+    "^good morning$",
+    "^gm$"
+  ],
+  "pause": [
+    "^salgo a comer$",
+    "^ahora vuelvo$",
+    "^voy a comer$"
+  ],
+  "return": [
+    "^ya estoy$",
+    "^he vuelto$",
+    "^ya estoy por aquí$",
+    "^ya estamos por aquí$"
+  ],
+  "leave": [
+   "^hasta mañana$",
+   "^nos vemos$"
+  ]
+}
