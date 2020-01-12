@@ -24,15 +24,24 @@ def services_are_running(f):
   def decorated(*args, **kwargs):
     data = args_decode(urllib.parse.unquote(request.get_data().decode('utf-8')))
     failed = False
+    logger_service_on = True
+
+    # Check log service
+    try:
+      requests.get(global_vars.LOGGER_SERVICE_ECHO_REQUEST)
+    except:
+      logger_service_on = False
+      post_private_message(global_messages.LOGGER_SERVICE_DOWN_MESSAGE, settings.ADMIN_USER)
 
     # Check intratime service
     try:
-      requests.get(global_vars.DIALOG_SERVICE_ECHO_REQUEST)
+      intratime = requests.get(global_vars.INTRATIME_SERVICE_ECHO_REQUEST)
     except:
       failed = True
       post_ephemeral_message(global_messages.INTRATIME_SERVICE_DOWN_MESSAGE, data['response_url'])
       post_private_message(global_messages.INTRATIME_SERVICE_DOWN_MESSAGE, settings.ADMIN_USER)
-      log('services_are_running', 'ERROR', global_messages.INTRATIME_SERVICE_DOWN_MESSAGE)
+      if logger_service_on:
+        log('services_are_running', 'ERROR', global_messages.INTRATIME_SERVICE_DOWN_MESSAGE)
 
     # Check user service
     try:
@@ -41,13 +50,8 @@ def services_are_running(f):
       failed = True
       post_ephemeral_message(global_messages.USER_SERVICE_DOWN_MESSAGE, data['response_url'])
       post_private_message(global_messages.USER_SERVICE_DOWN_MESSAGE, settings.ADMIN_USER)
-      log('services_are_running', 'ERROR', global_messages.USER_SERVICE_DOWN_MESSAGE)
-
-    # Log service
-    try:
-      requests.get(global_vars.LOGGER_SERVICE_ECHO_REQUEST)
-    except:
-      post_private_message(global_messages.LOGGER_SERVICE_DOWN_MESSAGE, settings.ADMIN_USER)
+      if logger_service_on:
+        log('services_are_running', 'ERROR', global_messages.USER_SERVICE_DOWN_MESSAGE)
 
     if failed:
       return make_response('', 200)
@@ -449,8 +453,10 @@ def get_interactive_data():
 @app.route('/sign_up', methods=['POST'])
 @services_are_running
 def sign_up_api():
+  print("entro")
   try:
     data = request.get_data().decode('utf-8')
+    print("data = {}".format(data))
   except:
     return jsonify({'status': global_messages.BAD_DATA_MESSAGE}), 400
 

@@ -8,8 +8,9 @@ sys.path.insert(0, '../config')
 import utils
 import settings
 import global_messages
+import global_vars
 
-myclient = pymongo.MongoClient(settings.MONGO_DB_SERVER)
+myclient = pymongo.MongoClient(global_vars.MONGO_DB_SERVER)
 intratime_db = myclient['intratime_db']
 users_collection = intratime_db['users']
 
@@ -107,7 +108,6 @@ def delete_user(user_id):
     return jsonify({'message': global_messages.FAIL_DELETE_USER_MESSAGE}), 400
 
   return jsonify({'message': global_messages.SUCCESS_MESSAGE}), 200
-
 
 #-------------------------------------------------------------------------------
 

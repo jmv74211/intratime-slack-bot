@@ -2,3 +2,6 @@ venv
 .vscode
 __pycache__
 *.log
+cert
+deploy/db_data/*
+!deploy/db_data/readme.md

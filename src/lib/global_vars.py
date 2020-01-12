@@ -3,16 +3,12 @@ sys.path.insert(0, '../config')
 import settings
 
 # URLS
-DIALOG_SERVICE_URL = "http://{}:{}".format(settings.DIALOG_SERVICE_HOST, settings.DIALOG_SERVICE_PORT)
-INTRATIME_SERVICE_URL = "http://{}:{}".format(settings.INTRATIME_SERVICE_HOST, settings.INTRATIME_SERVICE_PORT)
-USER_SERVICE_URL = "http://{}:{}".format(settings.USER_SERVICE_HOST, settings.USER_SERVICE_PORT)
-LOGGER_SERVICE_URL = "http://{}:{}".format(settings.LOGGER_SERVICE_HOST, settings.LOGGER_SERVICE_PORT)
-
-# MODULES_NAME
-INTRATIME_MODULE_NAME = 'Intratime_service'
-USER_MODULE_NAME  = 'User_service'
-LOGGER_MODULE_NAME = 'Logger_service'
-DIALOG_MODULE_NAME = 'Dialog_service'
+DIALOG_SERVICE_URL = "http://{}:{}".format(settings.INTRATIME_SERVICE_NAME, settings.DIALOG_SERVICE_PORT)
+INTRATIME_SERVICE_URL = "http://{}:{}".format(settings.INTRATIME_SERVICE_NAME, settings.INTRATIME_SERVICE_PORT)
+USER_SERVICE_URL = "http://{}:{}".format(settings.USER_SERVICE_NAME, settings.USER_SERVICE_PORT)
+LOGGER_SERVICE_URL = "http://{}:{}".format(settings.LOGGER_SERVICE_NAME, settings.LOGGER_SERVICE_PORT)
+MONGO_DB_SERVER = "mongodb://{}:{}@{}:{}/".format(settings.MONGO_DB_USER, settings.MONGO_DB_PASSWORD,
+  settings.MONGO_DB_HOST, settings.MONGO_DB_PORT)
 
 # SLACK
 SLACK_POST_MESSAGE_URL = 'https://slack.com/api/chat.postMessage'
