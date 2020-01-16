@@ -14,8 +14,11 @@ INTRATIME_SERVICE_NAME = 'intratime-service'
 USER_SERVICE_NAME  = 'user-service'
 LOGGER_SERVICE_NAME = 'logger-service'
 DIALOG_SERVICE_NAME = 'dialog-service'
+BOT_SERVICE_NAME = 'bot-service'
 
-LOG_FILE = 'intratime_app.log' # Logs application errors
+LOG_FILE = '../logs/intratime_app.log' # Logs application errors
+#LOG_FILE = "DIR PATH = {}".format(os.path.dirname(os.path.realpath(__file__))) #
+BOT_URL_IMAGE = 'https://raw.githubusercontent.com/jmv74211/Intratime-slack-bot/master/images/intratime_vertical_logo.png'
 
 ADMIN_USER = 'US6HV86ES' # He will be alerted if any service is offline
 SLACK_API_TOKEN = os.environ['SLACK_API_TOKEN']

@@ -38,3 +38,18 @@ WRONG_CREDENTIALS_MESSAGE = 'Sorry, the username and/or password are not correct
 USER_NOT_REGISTERED_MESSAGE = 'Sorry, you are not registered'
 WRONG_DATABASE_CREDENTIALS_MESSAGE = 'Sorry, the username and/or password from database data are not correct'
 ALREADY_REGISTERED_MESSAGE = 'you are already registered'
+
+## LOG ERROR MESSAGES
+ADD_USER_ERROR = 'Could not add the user'
+UPDATE_USER_ERROR = 'Could not update the user'
+DELETE_USER_ERROR = 'Could not delete the user'
+REGISTER_INTRATIME_ERROR = 'Could not register data in intratime'
+PRIVATE_MESSAGE_ERROR = 'Could not send the private message'
+EPHEMERAL_MESSAGE_ERROR = 'Could not send the ephemeral message'
+WRONG_CALLBACK_ID = 'Wrong callback ID'
+
+## BOT MESSAGES
+IN_MESSAGE = 'iniciar la jornada laboral'
+PAUSE_MESSAGE = 'realizar una pausa durante la jornada laboral'
+RETURN_MESSAGE = 'volver a la jornada laboral tras una pausa'
+LEAVE_MESSAGE = 'finalizar tu jornada laboral'

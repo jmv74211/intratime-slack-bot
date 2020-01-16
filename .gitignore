@@ -5,3 +5,5 @@ __pycache__
 cert
 deploy/db_data/*
 !deploy/db_data/readme.md
+src/logs/*
+!src/logs/readme.md

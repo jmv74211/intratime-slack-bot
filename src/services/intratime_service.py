@@ -9,6 +9,7 @@ sys.path.insert(0, '../lib')
 import settings
 import global_messages
 import global_vars
+import utils
 
 app = Flask(__name__)
 
@@ -25,22 +26,6 @@ INTRATIME_API_HEADER = {
 #------------------------------------------------------------------------------#
 #                             AUX FUNCTIONS                                    #
 #------------------------------------------------------------------------------#
-
-def log(function, log_type, message):
-
-  payload = {'module': global_vars.INTRATIME_MODULE_NAME, 'function': function,
-    'type': log_type, 'message': message}
-  headers = {'content-type': 'application/json'}
-
-  request = requests.post("{}/{}".format(settings.LOGGER_SERVICE_UR, '/log'),
-    json=payload, headers=headers)
-
-  if request.status_code != 200:
-    return False
-
-  return True
-
-#-------------------------------------------------------------------------------
 
 def get_current_date_time():
 
@@ -63,7 +48,7 @@ def get_action(action):
   try:
     return switcher[action]
   except:
-    log('get_action','ERROR' ,"Action error. Got {}".format(action))
+    utils.log(settings.INTRATIME_SERVICE_NAME, 'get_action','ERROR' ,"Action error. Got {}".format(action))
     return -1
 
 #-------------------------------------------------------------------------------
@@ -88,7 +73,7 @@ def get_login_token(email, password):
     request = requests.post("{}{}".format(INTRATIME_API_URL, INTRATIME_API_LOGIN_PATH),
       data=payload, headers=INTRATIME_API_HEADER)
   except:
-    log('get_login_token', 'ERROR', global_messages.INTRATIME_CONNECT_ERROR_MESSAGE)
+    utils.log(settings.INTRATIME_SERVICE_NAME,'get_login_token', 'ERROR', global_messages.INTRATIME_CONNECT_ERROR_MESSAGE)
     return -2
 
   try:
@@ -123,11 +108,11 @@ def clocking(action, token):
     if request.status_code == 201:
       return 0
     else:
-      log('clocking', 'ERROR', "{} Status code = {}. Message = {}"
+      utils.log(settings.INTRATIME_SERVICE_NAME, 'clocking', 'ERROR', "{} Status code = {}. Message = {}"
         .format(global_messages.FAIL_INTRATIME_REGISTER_MESSAGE,request.status_code, request.text))
       return -1
   except:
-    log('clocking', 'ERROR', global_messages.INTRATIME_CONNECT_ERROR_MESSAGE)
+    utils.log(settings.INTRATIME_SERVICE_NAME, 'clocking', 'ERROR', global_messages.INTRATIME_CONNECT_ERROR_MESSAGE)
     return -2
 
 #------------------------------------------------------------------------------#
@@ -175,7 +160,7 @@ def register():
   if token == -1:
     return jsonify({'message': global_messages.WRONG_CREDENTIALS_MESSAGE}), 202
   elif token == -2:
-    log('register', 'ERROR', "{} Status code = {}"
+    utils.log(settings.INTRATIME_SERVICE_NAME, 'register', 'ERROR', "{} Status code = {}"
       .format(global_messages.TOKEN_INTRATIME_ERROR_MESSAGE, request.status_code))
     return jsonify({'message': global_messages.INTRATIME_CONNECT_ERROR_MESSAGE}), 500
 
@@ -184,7 +169,7 @@ def register():
   if register_status == -1:
     return jsonify({'message': global_messages.FAIL_INTRATIME_REGISTER_MESSAGE}), 500
   elif register_status == -2:
-    log('register', 'ERROR', "{} Status code = {}"
+    utils.log(settings.INTRATIME_SERVICE_NAME, 'register', 'ERROR', "{} Status code = {}"
       .format(global_messages.INTRATIME_CONNECT_ERROR_MESSAGE, request.status_code))
     return jsonify({'message': global_messages.INTRATIME_CONNECT_ERROR_MESSAGE}), 500
 

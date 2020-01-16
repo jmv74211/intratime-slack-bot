@@ -88,7 +88,7 @@ services:
         - MONGO_DB_USER
         - MONGO_DB_PASSWORD
       working_dir: /src/services
-      command: python3 log_service.py
+      command: python3 logger_service.py
 
     bot-service:
       build:

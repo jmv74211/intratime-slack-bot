@@ -6,8 +6,12 @@ import slack
 import json
 import sys
 import requests
+import datetime
 sys.path.insert(0, '../config')
+sys.path.insert(0, '../lib')
 import settings
+import utils
+import global_messages
 
 PATTERS_FILE = '../config/trigger_patterns.json'
 
@@ -54,10 +58,10 @@ def post_thread_message(web_client, channel_id, text, thread_ts):
 def generate_reminder_message(user_display_name, action):
 
   action_text = {
-    'IN': 'iniciar la jornada laboral',
-    'PAUSE': 'realizar una pausa durante la jornada laboral',
-    'RETURN': 'volver a la jornada laboral tras una pausa',
-    'LEAVE': 'finalizar tu jornada laboral'
+    'IN': global_messages.IN_MESSAGE,
+    'PAUSE': global_messages.PAUSE_MESSAGE,
+    'RETURN': global_messages.RETURN_MESSAGE,
+    'LEAVE': global_messages.LEAVE_MESSAGE
   }
 
   block_message = \
@@ -75,7 +79,7 @@ def generate_reminder_message(user_display_name, action):
         },
         "accessory": {
           "type": "image",
-          "image_url": "https://raw.githubusercontent.com/jmv74211/Intratime-slack-bot/master/images/intratime_vertical_logo.png",
+          "image_url": settings.BOT_URL_IMAGE,
 
           "alt_text": "Intratime logo"
         }
@@ -111,40 +115,62 @@ def check_patterns(web_client, channel_id, thread_ts, text_data, user_id):
       user_display_name = get_user_display_name(user_id)
       block_message = generate_reminder_message(user_display_name, 'IN')
       post_ephemeral_message(web_client, channel_id, block_message, user_id)
-
+      return
 
   for item in patterns['pause']:
     if re.match(pre_process_text(item), text_data):
       user_display_name = get_user_display_name(user_id)
       block_message = generate_reminder_message(user_display_name, 'PAUSE')
       post_ephemeral_message(web_client, channel_id, block_message, user_id)
-
+      return
 
   for item in patterns['return']:
     if re.match(pre_process_text(item), text_data):
       user_display_name = get_user_display_name(user_id)
       block_message = generate_reminder_message(user_display_name, 'RETURN')
       post_ephemeral_message(web_client, channel_id, block_message, user_id)
-
+      return
 
   for item in patterns['leave']:
     if re.match(pre_process_text(item), text_data):
+      print("text_data = {}".format(text_data))
       user_display_name = get_user_display_name(user_id)
       block_message = generate_reminder_message(user_display_name, 'LEAVE')
       post_ephemeral_message(web_client, channel_id, block_message, user_id)
+      return
+
+#-------------------------------------------------------------------------------
+
+def print_output_log(user, text):
+
+  date_time = datetime.datetime.now().strftime("[%d/%b/%Y %H:%M:%S]")
+  print("{} | check_pattern_event | user: {} | text: {}".format(date_time, user, text))
 
 #-------------------------------------------------------------------------------
 
 @slack.RTMClient.run_on(event='message')
 def check_pattern_event(**payload):
+
     data = payload['data']
     web_client = payload['web_client']
 
     text_data = pre_process_text(data.get('text',''), user_input=True)
+    user = data.get('user', None)
 
-    check_patterns(web_client, data['channel'], data['ts'], text_data, data['user'])
+    # Thread messages
+    if user is None:
+      user = data.get('message', '').get('user','')
 
-#-------------------------------------------------------------------------------
+    try:
+      print_output_log(user, text_data)
+      check_patterns(web_client, data['channel'], data['ts'], text_data, user)
+    except Exception as e:
+      utils.log(settings.BOT_SERVICE_NAME, 'check_pattern_event', 'ERROR', "exception = {} \
+       \ndata = {}".format(str(e), data))
+
+#------------------------------------------------------------------------------#
+#                                  MAIN                                        #
+#------------------------------------------------------------------------------#
 
 print("BOT RUNNING!")
 rtm_client = slack.RTMClient(token=settings.SLACK_API_TOKEN)

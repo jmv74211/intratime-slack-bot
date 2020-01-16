@@ -34,12 +34,12 @@ def add_log():
   except:
     data = None
 
-  if not 'module' in data or not 'function' in data or not 'message' in data or not 'type' in data:
+  if not 'service' in data or not 'function' in data or not 'message' in data or not 'type' in data:
     return jsonify({'message': global_messages.BAD_DATA_MESSAGE}), 400
 
   date_time = get_current_date_time()
 
-  log = "{} - {} - {} - {} - {}\n".format(date_time, data['module'], data['function'],
+  log = "{} - {} - {} - {} - {}\n".format(date_time, data['service'], data['function'],
     data['type'], data['message'])
 
   with open(settings.LOG_FILE, 'a') as log_file:

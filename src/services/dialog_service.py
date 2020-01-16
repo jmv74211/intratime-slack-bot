@@ -4,14 +4,13 @@ import os
 import requests
 import urllib.parse
 import sys
+from functools import wraps
 sys.path.insert(0, '../lib')
 sys.path.insert(0, '../config')
 import utils
 import settings
 import global_vars
 import global_messages
-
-from functools import wraps
 
 app = Flask(__name__)
 
@@ -20,8 +19,10 @@ app = Flask(__name__)
 #------------------------------------------------------------------------------#
 
 def services_are_running(f):
+
   @wraps(f)
   def decorated(*args, **kwargs):
+
     data = args_decode(urllib.parse.unquote(request.get_data().decode('utf-8')))
     failed = False
     logger_service_on = True
@@ -41,7 +42,7 @@ def services_are_running(f):
       post_ephemeral_message(global_messages.INTRATIME_SERVICE_DOWN_MESSAGE, data['response_url'])
       post_private_message(global_messages.INTRATIME_SERVICE_DOWN_MESSAGE, settings.ADMIN_USER)
       if logger_service_on:
-        log('services_are_running', 'ERROR', global_messages.INTRATIME_SERVICE_DOWN_MESSAGE)
+        utils.log(settings.DIALOG_SERVICE_NAME, 'services_are_running', 'ERROR', global_messages.INTRATIME_SERVICE_DOWN_MESSAGE)
 
     # Check user service
     try:
@@ -51,7 +52,7 @@ def services_are_running(f):
       post_ephemeral_message(global_messages.USER_SERVICE_DOWN_MESSAGE, data['response_url'])
       post_private_message(global_messages.USER_SERVICE_DOWN_MESSAGE, settings.ADMIN_USER)
       if logger_service_on:
-        log('services_are_running', 'ERROR', global_messages.USER_SERVICE_DOWN_MESSAGE)
+        utils.log(settings.DIALOG_SERVICE_NAME, 'services_are_running', 'ERROR', global_messages.USER_SERVICE_DOWN_MESSAGE)
 
     if failed:
       return make_response('', 200)
@@ -76,21 +77,6 @@ def args_decode(data):
 
 #-------------------------------------------------------------------------------
 
-def log(function, log_type, message):
-
-  payload = {'module': global_vars.DIALOG_MODULE_NAME, 'function': function,
-    'type': log_type, 'message': message}
-  headers = {'content-type': 'application/json'}
-
-  request = requests.post(global_vars.LOGGER_SERVICE_POST_LOG_REQUEST, json=payload, headers=headers)
-
-  if request.status_code != 200:
-    return False
-
-  return True
-
-#-------------------------------------------------------------------------------
-
 def validate_credentials(email, password):
 
   payload = {'email': email, 'password': password}
@@ -105,7 +91,7 @@ def validate_credentials(email, password):
     else:
       return False
   else:
-    log('validate_credentials', 'ERROR', "{} Status code = {}. Message = {}"
+    utils.log(settings.DIALOG_SERVICE_NAME, 'validate_credentials', 'ERROR', "{} Status code = {}. Message = {}"
       .format(global_messages.INTRATIME_CONNECT_ERROR_MESSAGE,request.status_code, request.text))
     return False
 
@@ -121,7 +107,7 @@ def check_user_already_exists(user_id):
     else:
       return False
   else:
-    log('check_user_already_exists', 'ERROR', "{} Status code = {0}. Message = {}"
+    utils.log(settings.DIALOG_SERVICE_NAME, 'check_user_already_exists', 'ERROR', "{} Status code = {}. Message = {}"
       .format(global_messages.USER_CONNECT_ERROR_MESSAGE, request.status_code, request.text))
     return False
 
@@ -140,7 +126,7 @@ def get_user_credentials(user_id):
     else:
       return None
   else:
-    log('get_user_credentials', 'ERROR', "{} Status code = {0}. Message = {}"
+    utils.log(settings.DIALOG_SERVICE_NAME, 'get_user_credentials', 'ERROR', "{} Status code = {}. Message = {}"
       .format(global_messages.USER_CONNECT_ERROR_MESSAGE, request.status_code, request.text))
     return None
 
@@ -165,6 +151,8 @@ def add_user(user_id, username, email, password):
   if request.status_code == 201:
     return True, message
   else:
+    utils.log(settings.DIALOG_SERVICE_NAME, 'add_user', 'ERROR', "{} Status code = {}. Message = {}"
+      .format(global_messages.ADD_USER_ERROR, request.status_code, request.text))
     return False, message
 
 #-------------------------------------------------------------------------------
@@ -182,6 +170,8 @@ def update_user(user_id, username, email, password):
   if request.status_code == 200:
     return True, message
   else:
+    utils.log(settings.DIALOG_SERVICE_NAME, 'update_user', 'ERROR', "{} Status code = {}. Message = {}"
+      .format(global_messages.UPDATE_USER_ERROR, request.status_code, request.text))
     return False, message
 
 #-------------------------------------------------------------------------------
@@ -199,6 +189,8 @@ def delete_user(user_id):
   if request.status_code == 200:
     return True, message
   else:
+    utils.log(settings.DIALOG_SERVICE_NAME, 'delete_user', 'ERROR', "{} Status code = {}. Message = {}"
+      .format(global_messages.DELETE_USER_ERROR, request.status_code, request.text))
     return False, message
 
 #-------------------------------------------------------------------------------
@@ -215,6 +207,8 @@ def register_intratime_data(email, password, action):
   if request.status_code == 200:
     return True, ''
   else:
+    utils.log(settings.DIALOG_SERVICE_NAME, 'register_intratime_data', 'ERROR', "{} Status code = {}. Message = {}"
+      .format(global_messages.REGISTER_INTRATIME_ERROR, request.status_code, request.text))
     return False, message
 
 #-------------------------------------------------------------------------------
@@ -224,7 +218,11 @@ def post_private_message(message, channel):
   payload = {'text': message, 'channel': channel, 'as_user': True}
   bot_token = "Bearer {}".format(settings.SLACK_API_TOKEN)
   headers = {'content-type': 'application/json;charset=iso-8859-1', 'Authorization': bot_token}
-  requests.post(global_vars.SLACK_POST_MESSAGE_URL, json=payload, headers=headers)
+  request = requests.post(global_vars.SLACK_POST_MESSAGE_URL, json=payload, headers=headers)
+
+  if request.status_code != 200:
+    utils.log(settings.DIALOG_SERVICE_NAME, 'post_private_message', 'ERROR', "{} Status code = {}. Message = {}"
+      .format(global_messages.PRIVATE_MESSAGE_ERROR, request.status_code, request.text))
 
 #-------------------------------------------------------------------------------
 
@@ -232,7 +230,11 @@ def post_ephemeral_message(message, response_url):
 
   payload = {'text': message, 'response_type': 'ephemeral'}
   headers = {'content-type': 'application/json'}
-  requests.post(response_url, json=payload, headers=headers)
+  request = requests.post(response_url, json=payload, headers=headers)
+
+  if request.status_code != 200:
+    utils.log(settings.DIALOG_SERVICE_NAME, 'post_ephemeral_message', 'ERROR', "{} Status code = {}. Message = {}"
+      .format(global_messages.EPHEMERAL_MESSAGE_ERROR, request.status_code, request.text))
 
 #-------------------------------------------------------------------------------
 
@@ -338,8 +340,8 @@ def get_api_data(data, callback_id):
       ]
     }
   else:
-    log('get_api_data', 'ERROR', "Callback id does not exist. Actual value = {}"
-      .format(callback_id))
+    utils.log(settings.DIALOG_SERVICE_NAME, 'get_api_data', 'ERROR', "{}. Actual value = {}"
+      .format(global_messages.WRONG_CALLBACK_ID, callback_id))
     return None
 
   api_data = {
@@ -356,6 +358,7 @@ def get_api_data(data, callback_id):
 
 @app.route('/interactive', methods=['POST'])
 def get_interactive_data():
+
   try:
     data = urllib.parse.unquote(request.get_data().decode('utf-8'))
   except:
@@ -453,7 +456,7 @@ def get_interactive_data():
 @app.route('/sign_up', methods=['POST'])
 @services_are_running
 def sign_up_api():
-  print("entro")
+
   try:
     data = request.get_data().decode('utf-8')
     print("data = {}".format(data))
@@ -470,6 +473,7 @@ def sign_up_api():
 @app.route('/register', methods=['POST'])
 @services_are_running
 def register_api():
+
   try:
     data = request.get_data().decode('utf-8')
   except:
@@ -485,6 +489,7 @@ def register_api():
 @app.route('/update_user', methods=['POST'])
 @services_are_running
 def update_user_api():
+
   try:
     data = request.get_data().decode('utf-8')
   except:
@@ -500,6 +505,7 @@ def update_user_api():
 @app.route('/delete_user', methods=['POST'])
 @services_are_running
 def delete_user_api():
+
   try:
     data = request.get_data().decode('utf-8')
   except:
