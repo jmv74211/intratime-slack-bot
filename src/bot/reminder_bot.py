@@ -159,7 +159,10 @@ def check_pattern_event(**payload):
 
     # Thread messages
     if user is None:
-      user = data.get('message', '').get('user','')
+      try:
+        user = data.get('message', '').get('user','')
+      except:
+        user = 'anonymous'
 
     try:
       print_output_log(user, text_data)
