@@ -66,6 +66,8 @@ services:
         - 3002:3002
       volumes:
         - ./src:/src
+        - /etc/timezone:/etc/timezone:ro
+        - /etc/localtime:/etc/localtime:ro
       environment:
         - SLACK_API_TOKEN
         - CIPHER_KEY
