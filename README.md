@@ -17,6 +17,20 @@ You only need to enter your intratime credentials (they will be stored in an enc
 
 # How to use
 
+**Reminder bot messages**
+
+The reminder bot will process all the messages of the conversations to which it has been added, and will look for a series of [activation patterns](https://github.com/jmv74211/Intratime-slack-bot/blob/master/src/config/trigger_patterns.json) to send a reminder message to clock.
+
+>**Note**: This message will only be visible to the user who has written in the chat.
+
+For example, if we write "buenos días", it will show us the following message:
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/jmv74211/Intratime-slack-bot/master/images/bot_reminder_example.png">
+</p>
+
+> **Note**: In this case, the activation patterns are written in Spanish. You can edit it if necessary.
+
 **Register your user**
 
 The first step to be done from the client, is to register our credentials. To do this, you have to execute the defined command to register a user. In this example the command is `/sign_up`.
