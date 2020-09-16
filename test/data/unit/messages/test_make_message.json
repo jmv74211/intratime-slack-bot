@@ -1,0 +1,12 @@
+[
+    {
+        "code": 0,
+        "custom_message": "hello world",
+        "output": "Test message hello world"
+    },
+    {
+        "code": -2,
+        "custom_message": "hello world",
+        "output": "Error, could not get message with ID = -2"
+    }
+]
