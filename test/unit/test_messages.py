@@ -2,9 +2,9 @@ import pytest
 import os
 
 from intratime_slack_bot.lib import messages
-from intratime_slack_bot.lib.test_utils import read_file_data, UNIT_TEST_DATA_PATH
+from intratime_slack_bot.lib.test_utils import read_json_file_data, UNIT_TEST_DATA_PATH
 
-test_make_message_data = [item.values() for item in read_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'messages',
+test_make_message_data = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'messages',
                           'test_make_message.json'))]
 
 @pytest.mark.parametrize('code, custom_message, output', test_make_message_data)

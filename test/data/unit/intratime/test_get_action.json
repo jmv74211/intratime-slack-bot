@@ -1,0 +1,18 @@
+[
+    {
+        "action": "in",
+        "output": 0
+    },
+    {
+        "action": "out",
+        "output": 1
+    },
+    {
+        "action": "pause",
+        "output": 2
+    },
+    {
+        "action": "return",
+        "output": 3
+    }
+]

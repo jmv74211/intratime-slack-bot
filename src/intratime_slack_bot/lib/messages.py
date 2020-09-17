@@ -1,3 +1,6 @@
+from intratime_slack_bot.lib import logger
+from intratime_slack_bot.config import settings
+
 """
 Codes:
     DEBUG:    From 1000 to 1999
@@ -17,6 +20,7 @@ message = {
     # ------------------------------------------------------------------------------------------------------------------
 
     "3000": "Could not get action from intratime module",
+    "3001": "Could not get the message",
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -25,6 +29,14 @@ message = {
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
+def get(code, log_file=settings.APP_LOG_FILE):
+    try:
+        return message[str(code)]
+    except KeyError as exception:
+        logger.log(file=log_file, level=logger.ERROR, message_id=3001)
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def make_message(code, custom_message):
     """ Function to make a custom log message
