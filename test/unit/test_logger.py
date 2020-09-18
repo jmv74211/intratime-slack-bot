@@ -10,7 +10,8 @@ from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-test_log_data = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'logger', 'test_log.json'))]
+test_log_data = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'logger',
+                                                               'test_log.json'))]
 
 # ----------------------------------------------------------------------------------------------------------------------
 

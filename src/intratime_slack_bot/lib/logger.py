@@ -3,6 +3,8 @@ from datetime import datetime
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.messages import message
 
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 DEBUG = 'DEBUG'
 INFO = 'INFO'
@@ -20,8 +22,9 @@ LEVELS = {
 
 
 def get_current_date_time():
+    """
+    Get the current date time
 
-    """ Get the current date time
     Returns
     -------
         (Datetime): 2020-03-21 13:44:21
@@ -37,7 +40,8 @@ def get_current_date_time():
 
 
 def log(file, level, message_id=-1, custom_message=""):
-    """ Post a log in the indicated file
+    """
+    Post a log in the indicated file
 
     Parameters
     ----------

@@ -1,6 +1,9 @@
 from intratime_slack_bot.lib import logger
 from intratime_slack_bot.config import settings
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 """
 Codes:
     DEBUG:    From 1000 to 1999
@@ -11,16 +14,19 @@ Codes:
 
 message = {
     "0": "Test message",
-    "1000": "",
+    "1000": "Got Intratime API token",
 
     # ------------------------------------------------------------------------------------------------------------------
 
-    "2000": "",
+    "2000": "Registration done successfully",
 
     # ------------------------------------------------------------------------------------------------------------------
 
     "3000": "Could not get action from intratime module",
     "3001": "Could not get the message",
+    "3002": "Request error. Could not connect with intratime service",
+    "3003": "Could not get intratime auth token: Authentication failure",
+    "3004": "Could not clock the action in intratime API. Check credentials and intratime API status service",
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -31,6 +37,20 @@ message = {
 
 
 def get(code, log_file=settings.APP_LOG_FILE):
+    """
+    Function to get a custom message from message_id
+
+    Parameters
+    ----------
+    code: int
+        Message id
+    log_file: str
+        Log file when the action will be logged in case of failure
+
+    Returns
+    -------
+        (String): Message
+    """
     try:
         return message[str(code)]
     except KeyError as exception:
@@ -38,8 +58,10 @@ def get(code, log_file=settings.APP_LOG_FILE):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def make_message(code, custom_message):
-    """ Function to make a custom log message
+    """
+    Function to make a custom log message
 
     Parameters
     ----------
@@ -64,7 +86,8 @@ def make_message(code, custom_message):
 
 
 def get_exception_message(exception):
-    """ Function get the exception message
+    """
+    Function get the exception message
 
     Parameters
     ----------
