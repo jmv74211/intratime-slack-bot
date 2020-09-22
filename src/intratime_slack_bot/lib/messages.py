@@ -19,6 +19,9 @@ message = {
     # ------------------------------------------------------------------------------------------------------------------
 
     "2000": "Registration done successfully",
+    "2001": "User created successfully",
+    "2002": "User deleted successfully",
+    "2003": "User updated successfully",
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -27,6 +30,12 @@ message = {
     "3002": "Request error. Could not connect with intratime service",
     "3003": "Could not get intratime auth token: Authentication failure",
     "3004": "Could not clock the action in intratime API. Check credentials and intratime API status service",
+    "3005": "Bad user data",
+    "3006": "Could not create the user",
+    "3007": "User not found",
+    "3008": "Could not delete the user",
+    "3009": "Could not update the user",
+    "3010": "Could not add the user, this user_id is already registered",
 
     # ------------------------------------------------------------------------------------------------------------------
 

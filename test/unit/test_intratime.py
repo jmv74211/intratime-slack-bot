@@ -39,7 +39,6 @@ def test_get_action_log_error(remove_test_file):
 
 
 def test_get_auth_token(remove_test_file):
-
     # Test bad credentials
     assert intratime.get_auth_token('bar', 'foo', TEST_FILE) == codes.INTRATIME_AUTH_ERROR
     assert check_if_log_exist(messages.get(3003), TEST_FILE, logger.ERROR)
