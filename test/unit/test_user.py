@@ -1,6 +1,7 @@
 import pytest
 
 from intratime_slack_bot.lib.db import user
+from intratime_slack_bot.lib.db.database import validate_data, USER_MODEL
 from intratime_slack_bot.lib import codes, messages, logger
 from intratime_slack_bot.lib.test_utils import check_if_log_exist, TEST_FILE
 
@@ -40,8 +41,8 @@ def test_user_exist(add_remove_user):
 
 
 def test_validate_data():
-    assert user.validate_data(BAD_USER_DATA, user.USER_MODEL) is False
-    assert user.validate_data(TEST_USER_DATA, user.USER_MODEL)
+    assert validate_data(BAD_USER_DATA, USER_MODEL) is False
+    assert validate_data(TEST_USER_DATA, USER_MODEL)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -103,3 +104,21 @@ def test_get_all_users_data():
     assert len(user.get_all_users_data()) == 1
     user.delete_user(TEST_USER_DATA['user_id'])
     assert len(user.get_all_users_data()) == 0
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_update_last_registration_datetime(add_remove_user):
+    assert user.update_last_registration_datetime('bad_user_id', TEST_FILE) == codes.USER_NOT_FOUND
+    assert check_if_log_exist(messages.get(3007, TEST_FILE), TEST_FILE, logger.ERROR)
+    assert user.update_last_registration_datetime(TEST_USER_DATA['user_id'], TEST_FILE) == codes.SUCCESS
+    assert user.get_user_data(TEST_USER_DATA['user_id'], TEST_FILE)['last_registration_date'] \
+        != TEST_USER_DATA['last_registration_date']
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_get_user_id(add_remove_user):
+    assert user.get_user_id('fake_mail@mail.com', TEST_FILE) == codes.BAD_USER_EMAIL
+    assert check_if_log_exist(messages.make_message(3011, f"with mail = fake_mail@mail.com"), TEST_FILE, logger.ERROR)
+    assert user.get_user_id(TEST_USER_DATA['intratime_mail']) == TEST_USER_DATA['user_id']

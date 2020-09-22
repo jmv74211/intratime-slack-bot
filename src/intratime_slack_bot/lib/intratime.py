@@ -5,6 +5,8 @@ from datetime import datetime
 from http import HTTPStatus
 from intratime_slack_bot.lib import logger, codes, messages
 from intratime_slack_bot.config import settings
+from intratime_slack_bot.lib.db import user
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -225,6 +227,7 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
         if request.status_code == HTTPStatus.CREATED:
             user_info_message = f"- user: {email}, action: {action}"
             logger.log(file=log_file, level=logger.INFO, custom_message=messages.make_message(2000, user_info_message))
+            user.update_last_registration_datetime(user.get_user_id(email, log_file), log_file)
             return codes.SUCCESS
         else:
             logger.log(file=log_file, level=logger.ERROR, message_id=3004)
@@ -232,3 +235,5 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
     except ConnectionError:
         logger.log(file=log_file, level=logger.ERROR, message_id=3002)
         return codes.INTRATIME_API_CONNECTION_ERROR
+
+# ----------------------------------------------------------------------------------------------------------------------

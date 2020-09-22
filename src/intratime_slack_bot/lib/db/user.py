@@ -1,16 +1,8 @@
 import pymongo
 
 from intratime_slack_bot.config import settings
+from intratime_slack_bot.lib.db.database import validate_data, USER_COLLECTION, USER_MODEL
 from intratime_slack_bot.lib import warehouse, logger, codes, messages
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-MONGO_CLIENT = pymongo.MongoClient(warehouse.MONGO_DB_SERVER)
-db = MONGO_CLIENT['intratime_slack_bot']
-user_collection = db['user']
-
-USER_MODEL = ['user_id', 'username', 'password', 'intratime_mail', 'registration_date', 'last_registration_date']
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -30,38 +22,8 @@ def user_exist(user_id):
         True if the user exists, False otherwise
     """
 
-    if user_collection.count_documents({'user_id': user_id}) <= 0:
+    if USER_COLLECTION.count_documents({'user_id': user_id}) <= 0:
         return False
-
-    return True
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def validate_data(data, model):
-    """
-    Function verify the data structure according to a model
-
-    Parameters
-    ----------
-    data: dict
-        Input data
-
-    model: list
-        List of required fields
-
-    Returns
-    -------
-    boolean:
-        True if data structure is OK, False otherwise
-    """
-
-    if data is None:
-        return False
-
-    for required_field in model:
-        if required_field not in data:
-            return False
 
     return True
 
@@ -77,7 +39,7 @@ def add_user(data, log_file=settings.USER_SERVICE_LOG_FILE):
     data: dict
         User data
     log_file: str
-        Log file when the action will be logged in case of failure
+        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -97,7 +59,7 @@ def add_user(data, log_file=settings.USER_SERVICE_LOG_FILE):
         logger.log(file=log_file, level=logger.ERROR, message_id=3010)
         return codes.USER_ALREADY_EXIST
 
-    insert_request = user_collection.insert_one(data)
+    insert_request = USER_COLLECTION.insert_one(data)
 
     if insert_request.inserted_id is None:
         logger.log(file=log_file, level=logger.ERROR, message_id=3006)
@@ -117,6 +79,8 @@ def delete_user(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
     ----------
     user_id: str
         User identifier
+    log_file: str
+        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -130,7 +94,7 @@ def delete_user(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
         logger.log(file=log_file, level=logger.ERROR, message_id=3007)
         return codes.USER_NOT_FOUND
 
-    delete_request = user_collection.delete_one({'user_id': user_id})
+    delete_request = USER_COLLECTION.delete_one({'user_id': user_id})
 
     if delete_request.deleted_count <= 0:
         logger.log(file=log_file, level=logger.ERROR, message_id=3008)
@@ -152,6 +116,8 @@ def update_user(user_id, new_data, log_file=settings.USER_SERVICE_LOG_FILE):
         User identifier
     new_data: dict
         New user data
+    log_file: str
+        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -172,7 +138,7 @@ def update_user(user_id, new_data, log_file=settings.USER_SERVICE_LOG_FILE):
                                                         f"Expected model {USER_MODEL} and got this data: {new_data}"))
         return codes.BAD_USER_DATA
 
-    update_request = user_collection.update_one({'user_id': user_id}, {'$set': new_data})
+    update_request = USER_COLLECTION.update_one({'user_id': user_id}, {'$set': new_data})
 
     if update_request.modified_count <= 0:
         logger.log(file=log_file, level=logger.ERROR, message_id=3009)
@@ -192,6 +158,8 @@ def get_user_data(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
     ----------
     user_id: str
         User identifier
+    log_file: str
+        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -205,7 +173,7 @@ def get_user_data(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
         logger.log(file=log_file, level=logger.ERROR, message_id=3007)
         return codes.USER_NOT_FOUND
 
-    user_data = user_collection.find_one({'user_id': user_id})
+    user_data = USER_COLLECTION.find_one({'user_id': user_id})
 
     return user_data
 
@@ -222,4 +190,41 @@ def get_all_users_data():
         List with user information
     """
 
-    return [user for user in user_collection.find()]
+    return [user for user in USER_COLLECTION.find()]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
+
+    if not user_exist(user_id):
+        logger.log(file=log_file, level=logger.ERROR, message_id=3007)
+        return codes.USER_NOT_FOUND
+
+    user_data = get_user_data(user_id)
+
+    try:
+        user_data['last_registration_date'] = logger.get_current_date_time()
+    except KeyError:
+        logger.log(file=log_file, level=logger.ERROR, message_id=3012)
+
+    update_request = USER_COLLECTION.update_one({'user_id': user_id}, {'$set': user_data})
+
+    if update_request.modified_count <= 0:
+        logger.log(file=log_file, level=logger.ERROR, message_id=3011)
+        return codes.USER_UPDATE_ERROR
+
+    return codes.SUCCESS
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_user_id(email, log_file=settings.USER_SERVICE_LOG_FILE):
+    user_data = USER_COLLECTION.find_one({"intratime_mail": email})
+
+    if user_data is None:
+        logger.log(file=log_file, level=logger.ERROR, custom_message=messages.make_message(3011,
+                                                                                           f"with mail = {email}"))
+        return codes.BAD_USER_EMAIL
+
+    return user_data['user_id']

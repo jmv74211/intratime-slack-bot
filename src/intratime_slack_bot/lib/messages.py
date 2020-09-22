@@ -36,6 +36,9 @@ message = {
     "3008": "Could not delete the user",
     "3009": "Could not update the user",
     "3010": "Could not add the user, this user_id is already registered",
+    "3011": "Could not update the user last registration date",
+    "3012": "Could not find last_registration_date field",
+    "3013": "Could not get the user_id",
 
     # ------------------------------------------------------------------------------------------------------------------
 
