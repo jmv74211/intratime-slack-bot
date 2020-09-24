@@ -22,6 +22,7 @@ message = {
     "2001": "User created successfully",
     "2002": "User deleted successfully",
     "2003": "User updated successfully",
+    "2003": "User updated successfully",
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -39,6 +40,11 @@ message = {
     "3011": "Could not update the user last registration date",
     "3012": "Could not find last_registration_date field",
     "3013": "Could not get the user_id",
+    "3014": "Bad slack API credentials",
+    "3015": "Bad request data",
+    "3016": "Internal server error",
+    "3017": "Undefined error",
+    "3018": "Invalid value",
 
     # ------------------------------------------------------------------------------------------------------------------
 

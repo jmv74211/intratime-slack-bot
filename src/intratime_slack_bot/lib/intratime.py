@@ -108,7 +108,7 @@ def get_auth_token(email, password, log_file=settings.INTRATIME_SERVICE_LOG_FILE
 
 def check_user_credentials(email, password, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
     """
-    Function to check if user authentication is successfull
+    Function to check if user authentication is successful
 
     Parameters
     ----------

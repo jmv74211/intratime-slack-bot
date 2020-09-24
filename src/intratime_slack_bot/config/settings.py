@@ -12,5 +12,8 @@ LOG_LEVEL = 'DEBUG'
 APP_LOG_FILE = 'app.log'
 INTRATIME_SERVICE_LOG_FILE = 'intratime.log'
 USER_SERVICE_LOG_FILE = 'user.log'
+SLACK_SERVICE_LOG_FILE = 'slack.log'
 
 CIPHER_KEY = 'a1b2c3d4e5f6g7h8'  # os.environ['CIPHER_KEY']  # It must be 16 || 32 characters long
+
+SLACK_API_USER_TOKEN = os.environ['SLACK_API_USER_TOKEN']

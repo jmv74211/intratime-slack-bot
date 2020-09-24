@@ -196,6 +196,23 @@ def get_all_users_data():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
+    """
+    Function to update the last registration user info
+
+    Parameters
+    ----------
+    user_id: str
+        User identifier
+    log_file: str
+        Log file when the action will be logged in case of failure or success
+
+    Returns
+    -------
+    int:
+        codes.USER_NOT_FOUND if the user_id does not correspond with a registered user
+        codes.USER_UPDATE_ERROR if the info could not be update in the database due to db error
+        codes.SUCCESS if the data has been updated successfully
+    """
 
     if not user_exist(user_id):
         logger.log(file=log_file, level=logger.ERROR, message_id=3007)
@@ -220,6 +237,24 @@ def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LO
 
 
 def get_user_id(email, log_file=settings.USER_SERVICE_LOG_FILE):
+    """
+    Function to update the last registration user info
+
+    Parameters
+    ----------
+    email: str
+        User email
+    log_file: str
+        Log file when the action will be logged in case of failure or success
+
+    Returns
+    -------
+    str:
+        user_id if the email is correct
+    int:
+        codes.BAD_USER_EMAIL if the email does not correspond with a registered user
+    """
+
     user_data = USER_COLLECTION.find_one({"intratime_mail": email})
 
     if user_data is None:

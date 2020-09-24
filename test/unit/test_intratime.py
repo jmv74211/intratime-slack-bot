@@ -32,18 +32,17 @@ def test_get_action(action, output):
 
 def test_get_action_log_error(remove_test_file):
     intratime.get_action('foo', TEST_FILE)
-
     assert check_if_log_exist(messages.get(3000), TEST_FILE, logger.ERROR)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 def test_get_auth_token(remove_test_file):
-    # Test bad credentials
+    # BAD CREDENTIALS
     assert intratime.get_auth_token('bar', 'foo', TEST_FILE) == codes.INTRATIME_AUTH_ERROR
     assert check_if_log_exist(messages.get(3003), TEST_FILE, logger.ERROR)
 
-    # Test correct credentials
+    # VALID CREDENTIALS
     assert isinstance(intratime.get_auth_token(INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD, TEST_FILE), str)
     assert check_if_log_exist(messages.make_message(1000, f"for user {INTRATIME_TEST_USER_EMAIL}"), TEST_FILE,
                               logger.DEBUG)
@@ -52,11 +51,11 @@ def test_get_auth_token(remove_test_file):
 
 
 def test_check_user_credentials(remove_test_file):
-    # Test bad credentials
+    # BAD CREDENTIALS
     assert intratime.check_user_credentials('bar', 'foo', TEST_FILE) is False
     assert check_if_log_exist(messages.get(3003), TEST_FILE, logger.ERROR)
 
-    # Test correct credentials
+    # VALID CREDENTIALS
     assert intratime.check_user_credentials(INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD, TEST_FILE)
     assert check_if_log_exist(messages.make_message(1000, f"for user {INTRATIME_TEST_USER_EMAIL}"), TEST_FILE,
                               logger.DEBUG)
@@ -65,6 +64,7 @@ def test_check_user_credentials(remove_test_file):
 
 
 def test_clocking_bad_auth(remove_test_file):
+    # BAD TOKEN
     assert intratime.clocking(intratime.IN_ACTION, 'bad_token', INTRATIME_TEST_USER_EMAIL, TEST_FILE) == 2
     assert check_if_log_exist(messages.get(3004), TEST_FILE, logger.ERROR)
 
@@ -73,15 +73,15 @@ def test_clocking_bad_auth(remove_test_file):
 
 @pytest.mark.parametrize('action', TEST_CLOCKING_ACTIONS_DATA)
 def test_clocking_actions(action, remove_test_file):
-    # Set check interval: [current_datetime, current_datetime + 2 seconds]
+    # SET CHECK INTERVAL [current_datetime, current_datetime + 2 seconds]
     datetime_from = logger.get_current_date_time()
     datetime_to = str(datetime.strptime(datetime_from, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=2))
     user_info_message = f"- user: {INTRATIME_TEST_USER_EMAIL}, action: {action}"
 
-    # Clock action
+    # CLOCK ACTION
     assert intratime.clocking(action, token, INTRATIME_TEST_USER_EMAIL, TEST_FILE) == 0
 
-    # Check that the registration has been posted
+    # CHECK THAT THE REGISTRATION HAS BEEN POSTED
     assert len(intratime.get_user_clocks(token, datetime_from, datetime_to, action)) > 0
     assert check_if_log_exist(messages.make_message(2000, user_info_message), TEST_FILE, logger.INFO)
 
