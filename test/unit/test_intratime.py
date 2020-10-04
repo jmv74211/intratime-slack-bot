@@ -2,7 +2,7 @@ import pytest
 import os
 
 from datetime import datetime, timedelta
-from intratime_slack_bot.lib import intratime, messages, logger, codes
+from intratime_slack_bot.lib import intratime, messages, logger, codes, time_utils
 from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log_exist, UNIT_TEST_DATA_PATH, TEST_FILE
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -74,7 +74,7 @@ def test_clocking_bad_auth(remove_test_file):
 @pytest.mark.parametrize('action', TEST_CLOCKING_ACTIONS_DATA)
 def test_clocking_actions(action, remove_test_file):
     # SET CHECK INTERVAL [current_datetime, current_datetime + 2 seconds]
-    datetime_from = logger.get_current_date_time()
+    datetime_from = time_utils.get_current_date_time()
     datetime_to = str(datetime.strptime(datetime_from, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=2))
     user_info_message = f"- user: {INTRATIME_TEST_USER_EMAIL}, action: {action}"
 

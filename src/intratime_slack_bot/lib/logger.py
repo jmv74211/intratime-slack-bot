@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from intratime_slack_bot.config import settings
-from intratime_slack_bot.lib.messages import message
+from intratime_slack_bot.lib import time_utils
+from intratime_slack_bot.lib import messages
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -21,24 +22,6 @@ LEVELS = {
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_current_date_time():
-    """
-    Get the current date time
-
-    Returns
-    -------
-        (Datetime): 2020-03-21 13:44:21
-    """
-
-    now = datetime.now()
-    date_time = f"{now.strftime('%Y-%m-%d')} {now.strftime('%H:%M:%S')}"
-
-    return date_time
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
 def log(file, level, message_id=-1, custom_message=""):
     """
     Post a log in the indicated file
@@ -53,11 +36,11 @@ def log(file, level, message_id=-1, custom_message=""):
         message id from messages module
     """
 
-    datetime = get_current_date_time()
+    datetime = time_utils.get_current_date_time()
 
     if message_id != -1:
         try:
-            description = message[f"{message_id}"]
+            description = messages.message[f"{message_id}"]
         except KeyError:
             level = ERROR
             description = f"Could not get the message description from message with id {message_id}"

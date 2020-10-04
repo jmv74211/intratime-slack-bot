@@ -1,9 +1,11 @@
 import requests
 import json
-from datetime import datetime
+import re
+
+from datetime import datetime, date
 
 from http import HTTPStatus
-from intratime_slack_bot.lib import logger, codes, messages
+from intratime_slack_bot.lib import logger, codes, messages, time_utils
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
 
@@ -147,7 +149,7 @@ def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=set
     action: str
         Action enum: ['in', 'out', 'pause', 'return']
     log_file: str
-        Log file when the action will be logged in case of failur
+        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -167,14 +169,9 @@ def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=set
         try:
             data = request.json()
 
-            start_date = datetime.strptime(datetime_from, '%Y-%m-%d %H:%M:%S')
-            end_date = datetime.strptime(datetime_to, '%Y-%m-%d %H:%M:%S')
-
             for item in data:
-                date = datetime.strptime(item['INOUT_DATE'], '%Y-%m-%d %H:%M:%S')
-
-                # If date is between datetime_from and datetime_to
-                if start_date <= date <= end_date:
+                # If date is between date_from and date_to
+                if time_utils.date_included_in_range(datetime_from, datetime_to, item['INOUT_DATE']):
                     if action is None or (action is not None and get_action(action) == item['INOUT_TYPE']):
                         filtered_data.append(item)
 
@@ -203,7 +200,7 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
     email: str
         User email
     log_file: str
-        Log file when the action will be logged in case of failur
+        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -213,7 +210,7 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
        codes.INTRATIME_API_CONNECTION_ERROR if there is a Intratime API connection error
     """
 
-    date_time = logger.get_current_date_time()
+    date_time = time_utils.get_current_date_time()
 
     api_action = get_action(action)
 
@@ -235,5 +232,3 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
     except ConnectionError:
         logger.log(file=log_file, level=logger.ERROR, message_id=3002)
         return codes.INTRATIME_API_CONNECTION_ERROR
-
-# ----------------------------------------------------------------------------------------------------------------------

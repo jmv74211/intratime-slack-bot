@@ -2,7 +2,7 @@ import pymongo
 
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db.database import validate_data, USER_COLLECTION, USER_MODEL
-from intratime_slack_bot.lib import warehouse, logger, codes, messages
+from intratime_slack_bot.lib import warehouse, logger, codes, messages, time_utils
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -221,7 +221,7 @@ def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LO
     user_data = get_user_data(user_id)
 
     try:
-        user_data['last_registration_date'] = logger.get_current_date_time()
+        user_data['last_registration_date'] = time_utils.get_current_date_time()
     except KeyError:
         logger.log(file=log_file, level=logger.ERROR, message_id=3012)
 
