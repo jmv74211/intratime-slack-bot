@@ -2,6 +2,7 @@ import pytest
 import os
 
 from datetime import datetime, timedelta
+from intratime_slack_bot.config.settings import INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD
 from intratime_slack_bot.lib import intratime, messages, logger, codes, time_utils
 from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log_exist, UNIT_TEST_DATA_PATH, TEST_FILE
 
@@ -14,11 +15,6 @@ TEST_CLOCKING_ACTIONS_DATA = [item['action'] for item in read_json_file_data(os.
                               'intratime', 'test_clocking_actions.json'))]
 TEST_GET_USER_CLOCKS_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
                              'intratime', 'test_get_user_clocks.json'))]
-
-INTRATIME_TEST_USER_EMAIL = os.environ['INTRATIME_TEST_USER_EMAIL']
-INTRATIME_TEST_USER_PASSWORD = os.environ['INTRATIME_TEST_USER_PASSWORD']
-
-token = intratime.get_auth_token(INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD, TEST_FILE)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -64,15 +60,14 @@ def test_check_user_credentials(remove_test_file):
 
 
 def test_clocking_bad_auth(remove_test_file):
-    # BAD TOKEN
-    assert intratime.clocking(intratime.IN_ACTION, 'bad_token', INTRATIME_TEST_USER_EMAIL, TEST_FILE) == 2
-    assert check_if_log_exist(messages.get(3004), TEST_FILE, logger.ERROR)
+    code_result = intratime.clocking(intratime.IN_ACTION, 'bad_token', 'test@email.com', TEST_FILE)
+    assert code_result == codes.UNAUTHORIZED
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize('action', TEST_CLOCKING_ACTIONS_DATA)
-def test_clocking_actions(action, remove_test_file):
+def test_clocking_actions(token, action, remove_test_file):
     # SET CHECK INTERVAL [current_datetime, current_datetime + 2 seconds]
     datetime_from = time_utils.get_current_date_time()
     datetime_to = str(datetime.strptime(datetime_from, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=2))
@@ -88,6 +83,15 @@ def test_clocking_actions(action, remove_test_file):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('datetime_from, datetime_to, action, expected_result', TEST_GET_USER_CLOCKS_DATA)
-def test_get_user_clocks(datetime_from, datetime_to, action, expected_result, remove_test_file):
-    assert len(intratime.get_user_clocks(token, datetime_from, datetime_to, action)) == expected_result
+def test_get_user_clocks_bad_token():
+    code_result = intratime.get_user_clocks('bad_token', '2020-10-10 00:00:00', '2020-10-10 01:00:00',
+                                            intratime.IN_ACTION, TEST_FILE)
+    assert code_result == codes.UNAUTHORIZED
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('datetime_from, datetime_to, action, result', TEST_GET_USER_CLOCKS_DATA)
+def test_get_user_clocks(token, datetime_from, datetime_to, action, result):
+    data_result = intratime.get_user_clocks(token, datetime_from, datetime_to, action, TEST_FILE)
+    assert data_result == result

@@ -3,6 +3,7 @@ import json
 import re
 
 from datetime import datetime, date
+from http import HTTPStatus
 
 from http import HTTPStatus
 from intratime_slack_bot.lib import logger, codes, messages, time_utils
@@ -153,8 +154,10 @@ def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=set
 
     Returns
     -------
+    list:
+        filtered user clocks info
     int:
-       codes.SUCCESS if clocking has been successful
+       codes.UNAUTHORIZED if bad token
        codes.INTRATIME_NO_RESPONSE if intratime can not response the request.
        codes.INTRATIME_API_CONNECTION_ERROR if there is a Intratime API connection error
     """
@@ -165,6 +168,9 @@ def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=set
 
     try:
         request = requests.get(url=INTRATIME_API_USER_CLOCKINGS_PATH, headers=INTRATIME_API_HEADER)
+
+        if request.status_code == HTTPStatus.UNAUTHORIZED:
+            return codes.UNAUTHORIZED
 
         try:
             data = request.json()
@@ -206,8 +212,9 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
     -------
     int:
        codes.SUCCESS if clocking has been successful
-       codes.INTRATIME_AUTH_ERROR if user authentication has failed
+       codes.codes.UNAUTHORIZED if bad token authentication
        codes.INTRATIME_API_CONNECTION_ERROR if there is a Intratime API connection error
+       codes.NO_VALID_RESPONSE if intratime API response is not valid
     """
 
     date_time = time_utils.get_current_date_time()
@@ -221,14 +228,19 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
 
     try:
         request = requests.post(url=INTRATIME_API_CLOCKING_PATH, data=payload, headers=INTRATIME_API_HEADER)
+
+        if request.status_code == HTTPStatus.UNAUTHORIZED:
+            logger.log(file=log_file, level=logger.DEBUG, message_id=1001)
+            return codes.UNAUTHORIZED
+
         if request.status_code == HTTPStatus.CREATED:
             user_info_message = f"- user: {email}, action: {action}"
             logger.log(file=log_file, level=logger.INFO, custom_message=messages.make_message(2000, user_info_message))
             user.update_last_registration_datetime(user.get_user_id(email, log_file), log_file)
             return codes.SUCCESS
-        else:
-            logger.log(file=log_file, level=logger.ERROR, message_id=3004)
-            return codes.INTRATIME_AUTH_ERROR
+
+        return codes.NO_VALID_RESPONSE
+
     except ConnectionError:
         logger.log(file=log_file, level=logger.ERROR, message_id=3002)
         return codes.INTRATIME_API_CONNECTION_ERROR

@@ -3,6 +3,16 @@ from intratime_slack_bot.config import settings
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+ALIVE_MESSAGE = 'Alive'
+BAD_DATA_MESSAGE = 'ERROR: Bad data request'
+SUCCESS_MESSAGE = 'SUCCESS'
+BAD_CREDENTIALS = 'Bad credentials'
+BAD_INTRATIME_CONNECTION = 'Could not connect with intratime API'
+BAD_INTRATIME_RESPONSE = 'Could not validate intratime API response'
+BAD_TOKEN = 'Bad token'
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 """
 Codes:
@@ -15,6 +25,7 @@ Codes:
 message = {
     "0": "Test message",
     "1000": "Got Intratime API token",
+    "1001": "Bad intratime auth token when trying clocking",
 
     # ------------------------------------------------------------------------------------------------------------------
 
