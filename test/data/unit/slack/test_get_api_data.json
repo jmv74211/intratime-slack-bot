@@ -1,0 +1,126 @@
+[
+    {
+        "data": "token=test&team_id=TS3TR2ZRS&team_domain=test-lif3756&channel_id=CS4BSBDKJ&channel_name=slack-bot-and-commands&user_id=test&user_name=test&command=%2Fsign_up&text=&api_app_id=ARSTL2X6F&response_url=https%3A%2F%2Fhooks.slack.com%2Fcommands%2FTS3TR2ZRS%2F1430456160834%2FDZ17FjwPPbYsnpErRIhl4Iyp&trigger_id=test",
+        "callback_id": "sign_up",
+        "expected_api_data": {
+            "token": "test",
+            "trigger_id": "test",
+            "dialog": {
+                "title": "Intratime: Sign up",
+                "submit_label": "Submit",
+                "callback_id": "sign_up",
+                "elements": [
+                    {
+                        "label": "Intratime email",
+                        "name": "email",
+                        "type": "text",
+                        "subtype": "email",
+                        "placeholder": "you@example.com"
+                    },
+                    {
+                        "label": "Intratime password",
+                        "name": "password",
+                        "type": "text",
+                        "placeholder": "password"
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "data": "token=test&team_id=TS3TR2ZRS&team_domain=test-lif3756&channel_id=CS4BSBDKJ&channel_name=slack-bot-and-commands&user_id=test&user_name=test&command=%2Fsign_up&text=&api_app_id=ARSTL2X6F&response_url=https%3A%2F%2Fhooks.slack.com%2Fcommands%2FTS3TR2ZRS%2F1430456160834%2FDZ17FjwPPbYsnpErRIhl4Iyp&trigger_id=test",
+        "callback_id": "update_user",
+        "expected_api_data": {
+            "token": "test",
+            "trigger_id": "test",
+            "dialog": {
+                "title": "Intratime: Update user",
+                "submit_label": "Submit",
+                "callback_id": "update_user",
+                "elements": [
+                    {
+                        "label": "Email Address",
+                        "name": "email",
+                        "type": "text",
+                        "subtype": "email",
+                        "placeholder": "you@example.com"
+                    },
+                    {
+                        "label": "Password",
+                        "name": "password",
+                        "type": "text",
+                        "placeholder": "password"
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "data": "token=test&team_id=TS3TR2ZRS&team_domain=test-lif3756&channel_id=CS4BSBDKJ&channel_name=slack-bot-and-commands&user_id=test&user_name=test&command=%2Fsign_up&text=&api_app_id=ARSTL2X6F&response_url=https%3A%2F%2Fhooks.slack.com%2Fcommands%2FTS3TR2ZRS%2F1430456160834%2FDZ17FjwPPbYsnpErRIhl4Iyp&trigger_id=test",
+        "callback_id": "delete_user",
+        "expected_api_data": {
+            "token": "test",
+            "trigger_id": "test",
+            "dialog": {
+                "title": "Intratime: Delete user",
+                "submit_label": "Submit",
+                "callback_id": "delete_user",
+                "elements": [
+                    {
+                        "label": "Are you sure you want to delete your user?",
+                        "type": "select",
+                        "name": "delete",
+                        "options": [
+                            {
+                                "label": "No",
+                                "value": "cancel"
+                            },
+                            {
+                                "label": "Yes",
+                                "value": "confirm_delete"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "data": "token=test&team_id=TS3TR2ZRS&team_domain=test-lif3756&channel_id=CS4BSBDKJ&channel_name=slack-bot-and-commands&user_id=test&user_name=test&command=%2Fsign_up&text=&api_app_id=ARSTL2X6F&response_url=https%3A%2F%2Fhooks.slack.com%2Fcommands%2FTS3TR2ZRS%2F1430456160834%2FDZ17FjwPPbYsnpErRIhl4Iyp&trigger_id=test",
+        "callback_id": "clock",
+        "expected_api_data": {
+            "token": "test",
+            "trigger_id": "test",
+            "dialog": {
+                "title": "Intratime: Clocking",
+                "submit_label": "Submit",
+                "callback_id": "clock",
+                "elements": [
+                    {
+                        "label": "Action",
+                        "type": "select",
+                        "name": "action",
+                        "options": [
+                            {
+                                "label": "Entry",
+                                "value": "in"
+                            },
+                            {
+                                "label": "Pause",
+                                "value": "pause"
+                            },
+                            {
+                                "label": "Return",
+                                "value": "return"
+                            },
+                            {
+                                "label": "Leave",
+                                "value": "out"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+]

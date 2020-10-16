@@ -3,13 +3,26 @@ from intratime_slack_bot.config import settings
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# API RESPONSE MESSAGES
+
 ALIVE_MESSAGE = 'Alive'
 BAD_DATA_MESSAGE = 'ERROR: Bad data request'
 SUCCESS_MESSAGE = 'SUCCESS'
-BAD_CREDENTIALS = 'Bad credentials'
+BAD_CREDENTIALS = 'Bad intratime credentials'
 BAD_INTRATIME_CONNECTION = 'Could not connect with intratime API'
 BAD_INTRATIME_RESPONSE = 'Could not validate intratime API response'
 BAD_TOKEN = 'Bad token'
+USER_ALREADY_REGISTERED = 'This user is already registered'
+ADD_USER_ERROR = 'Could not add the user. Please contact with app administrator'
+USER_NOT_FOUND = 'This user is not registered'
+BAD_BD_CREDENTIALS = 'Bad intratime credentials. Please update the user (/update_user) with new credentials'
+
+# SLACK MESSAGES
+
+ADD_USER_SUCCESS = ':heavy_check_mark: The user has been created successfully :heavy_check_mark:'
+DELETE_USER_SUCCESS = ':heavy_check_mark: The user has been deleted successfully :heavy_check_mark:'
+UPDATE_USER_SUCCESS = ':heavy_check_mark: The user info has been updated successfully :heavy_check_mark:'
+CLOCKING_ACTION_SUCCESS = ':heavy_check_mark: Your clocking has been registered successfully :heavy_check_mark:'
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -80,6 +93,7 @@ def get(code, log_file=settings.APP_LOG_FILE):
     -------
         (String): Message
     """
+
     try:
         return message[str(code)]
     except KeyError as exception:
@@ -132,3 +146,40 @@ def get_exception_message(exception):
         return exception.message
     else:
         return str(exception)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def set_custom_message(key, parameters):
+    """
+    Function to get a custom slack message
+
+    Parameters
+    ----------
+    key: str
+        Message key
+    parameters: list
+        List of parameters to add to the custom message
+
+    Returns
+    -------
+    str:
+        Custom slack message
+    """
+
+    if key == 'ADD_USER_ERROR':
+        return f":x: Could not add the user. Status code = {parameters[0]}. Please contact with app administrator :x:"
+    elif key == 'DELETE_USER_ERROR':
+        return f":x: Could not delete the user. Status code = {parameters[0]}. Please contact with app administrator"\
+                " :x:"
+    elif key == 'UPDATE_USER_ERROR':
+        return f":x: Could not update the user info. Status code = {parameters[0]}. Please contact with app " \
+                "administrator :x:"
+    elif key == 'CLOCKING_ERROR':
+        return f":x: Could not clock your action. Status code = {parameters[0]}. Please contact with app " \
+                "administrator :x:"
+    elif key == 'CLOCKING_CHECK_ERROR':
+        return f":x: Could not verify your last clocking. Status code = {parameters[0]}. Please, check manually or " \
+                "by consulting your last clocks to verify this clocking action :x:"
+    else:
+        return ""

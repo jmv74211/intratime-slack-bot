@@ -7,15 +7,17 @@ from intratime_slack_bot.lib.test_utils import read_json_file_data, UNIT_TEST_DA
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-test_make_message_data = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'messages',
+TEST_MAKE_MESSAGE_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'messages',
                           'test_make_message.json'))]
+TEST_SET_CUSTOM_MESSAGE_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
+                                'messages', 'test_set_custom_message.json'))]
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('code, custom_message, output', test_make_message_data)
-def test_make_message(code, custom_message, output):
-    assert messages.make_message(code, custom_message) == output
+@pytest.mark.parametrize('code, custom_message, expected_result', TEST_MAKE_MESSAGE_DATA)
+def test_make_message(code, custom_message, expected_result):
+    assert messages.make_message(code, custom_message) == expected_result
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -27,3 +29,10 @@ def get_exception_message():
         exception = e
 
     assert messages.get_exception_message() == "division by zero"
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('key, parameters, expected_result', TEST_SET_CUSTOM_MESSAGE_DATA)
+def test_set_custom_message(key, parameters, expected_result):
+    assert messages.set_custom_message(key, parameters) == expected_result

@@ -129,16 +129,14 @@ def test_delete_user(remove_test_file):
 
 
 def test_get_all_users_data():
-    # CHECK INITIAL DATA
-    assert len(user.get_all_users_data()) == 0
-
     # ADD AN USER AND CHECK DATA
     user.add_user(TEST_USER_DATA, TEST_FILE)
-    assert len(user.get_all_users_data()) == 1
+    num_users = len(user.get_all_users_data())
+    assert num_users > 0
 
     # DELETE THE USER AND CHECK DATA
     user.delete_user(TEST_USER_DATA['user_id'])
-    assert len(user.get_all_users_data()) == 0
+    assert len(user.get_all_users_data()) == num_users - 1
 
 # ----------------------------------------------------------------------------------------------------------------------
 

@@ -1,0 +1,42 @@
+[
+    {
+        "key": "ADD_USER_ERROR",
+        "parameters": [
+            15
+        ],
+        "expected_result": ":x: Could not add the user. Status code = 15. Please contact with app administrator :x:"
+    },
+    {
+        "key": "DELETE_USER_ERROR",
+        "parameters": [
+            15
+        ],
+        "expected_result": ":x: Could not delete the user. Status code = 15. Please contact with app administrator :x:"
+    },
+    {
+        "key": "UPDATE_USER_ERROR",
+        "parameters": [
+            15
+        ],
+        "expected_result": ":x: Could not update the user info. Status code = 15. Please contact with app administrator :x:"
+    },
+    {
+        "key": "CLOCKING_ERROR",
+        "parameters": [
+            15
+        ],
+        "expected_result": ":x: Could not clock your action. Status code = 15. Please contact with app administrator :x:"
+    },
+    {
+        "key": "CLOCKING_CHECK_ERROR",
+        "parameters": [
+            15
+        ],
+        "expected_result": ":x: Could not verify your last clocking. Status code = 15. Please, check manually or by consulting your last clocks to verify this clocking action :x:"
+    },
+    {
+        "key": "",
+        "parameters": [],
+        "expected_result": ""
+    }
+]

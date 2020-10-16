@@ -178,3 +178,25 @@ def convert_datetime_string_to_date_string(date_time):
     date_time_object = datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
     date_string = datetime.strftime(date_time_object.date(), '%Y-%m-%d')
     return date_string
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_past_datetime_from_current_datetime(seconds):
+    """
+    Get the datetime after x seconds from current time
+
+    Parameters
+    ----------
+    seconds: int
+        Number of seconds
+
+    Returns
+    -------
+    str:
+        Date in format %Y-%m-%d %H:%M:%S
+    """
+    date_object = datetime.strptime(get_current_date_time(), '%Y-%m-%d %H:%M:%S')
+    past_datetime = datetime.strftime(date_object - timedelta(seconds=seconds), '%Y-%m-%d %H:%M:%S')
+
+    return past_datetime
