@@ -21,7 +21,8 @@
                         "label": "Intratime password",
                         "name": "password",
                         "type": "text",
-                        "placeholder": "password"
+                        "placeholder": "password",
+                        "hint": "Attention: There is no password field type, so it will be written in plain text"
                     }
                 ]
             }
@@ -49,7 +50,8 @@
                         "label": "Password",
                         "name": "password",
                         "type": "text",
-                        "placeholder": "password"
+                        "placeholder": "password",
+                        "hint": "Attention: There is no password field type, so it will be written in plain text"
                     }
                 ]
             }
@@ -73,11 +75,11 @@
                         "options": [
                             {
                                 "label": "No",
-                                "value": "cancel"
+                                "value": "no"
                             },
                             {
                                 "label": "Yes",
-                                "value": "confirm_delete"
+                                "value": "yes"
                             }
                         ]
                     }

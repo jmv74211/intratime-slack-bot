@@ -50,7 +50,8 @@ def get_sign_up_ui():
                 "label": "Intratime password",
                 "name": "password",
                 "type": "text",
-                "placeholder": "password"
+                "placeholder": "password",
+                "hint": "Attention: There is no password field type, so it will be written in plain text"
             }
         ]
     }
@@ -75,7 +76,9 @@ def get_update_user_ui():
                 "label": "Password",
                 "name": "password",
                 "type": "text",
-                "placeholder": "password"
+                "placeholder": "password",
+                "hint": "Attention: There is no password field type, so it will be written in plain text"
+
             }
         ]
     }
@@ -96,11 +99,11 @@ def get_delete_user_ui():
                 "options": [
                     {
                         "label": "No",
-                        "value": "cancel"
+                        "value": "no"
                     },
                     {
                         "label": "Yes",
-                        "value": "confirm_delete"
+                        "value": "yes"
                     }
                 ]
             }

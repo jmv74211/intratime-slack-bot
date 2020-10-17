@@ -2,8 +2,11 @@ import pytest
 import os
 import re
 import json
+import requests
 
-from intratime_slack_bot.lib import slack, codes, messages, logger
+from intratime_slack_bot.config import settings
+from intratime_slack_bot.lib.db import user
+from intratime_slack_bot.lib import slack, codes, messages, logger, intratime, time_utils
 from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log_exist, TEST_FILE, UNIT_TEST_DATA_PATH
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -27,6 +30,12 @@ TEST_GET_API_NAMES = [item['callback_id'] for item in read_json_file_data(os.pat
 TEST_GENERATE_CLOCK_MESSAGE_DATA = [item.values() for item in
                                     read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'slack',
                                                                      'test_generate_clock_message.json'))]
+
+interactive_test_data = {'type': 'dialog_submission', 'token': 'test', 'action_ts': 'test', 'team': {'id': 'test',
+                         'domain': 'test'}, 'user': {'id': 'test', 'name': 'test'}, 'channel': {'id': 'test',
+                         'name': 'slack-bot-and-commands'}, 'submission': {'email': settings.INTRATIME_TEST_USER_EMAIL,
+                         'password': settings.INTRATIME_TEST_USER_PASSWORD}, 'callback_id': 'test',
+                         'response_url': 'test', 'state': ''}
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -104,5 +113,77 @@ def test_get_api_data(data, callback_id, expected_api_data):
 
 
 @pytest.mark.parametrize('data, expected_result', TEST_GENERATE_CLOCK_MESSAGE_DATA)
-def test_get_api_data(data, expected_result):
+def test_generate_clock_message(data, expected_result):
     assert slack.generate_clock_message(data) == expected_result
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_process_clock_interactive_data(add_user, token, post_delete_user, clock_out):
+    # Prepare data
+    global interactive_test_data
+    interactive_test_data['callback_id'] = 'clock'
+    interactive_test_data['submission']['action'] = 'in'
+
+    # Lauch clocking process
+    try:
+        slack.process_interactive_data(interactive_test_data)
+    except requests.exceptions.MissingSchema:
+        pass
+
+    # Check if clocking has been registered
+    clocking_check = intratime.get_user_clocks(token, time_utils.get_past_datetime_from_current_datetime(5),
+                                               time_utils.get_current_date_time(),
+                                               interactive_test_data['submission']['action'])
+
+    assert len(clocking_check) > 0
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_process_sign_up_interactive_data(pre_delete_user, post_delete_user):
+    # Prepare data
+    global interactive_test_data
+    interactive_test_data['callback_id'] = 'sign_up'
+
+    # Lauch clocking process
+    try:
+        slack.process_interactive_data(interactive_test_data)
+    except requests.exceptions.MissingSchema:
+        pass
+
+    assert user.user_exist(interactive_test_data['user']['id'])
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_process_update_user_interactive_data(add_user, post_delete_user):
+    # Prepare data
+    global interactive_test_data
+    old_hash_password = user.get_user_data(interactive_test_data['user']['id'])['password']
+
+    interactive_test_data['callback_id'] = 'update_user'
+
+    # Lauch clocking process
+    try:
+        slack.process_interactive_data(interactive_test_data)
+    except requests.exceptions.MissingSchema:
+        pass
+
+    assert user.get_user_data(interactive_test_data['user']['id'])['password'] != old_hash_password
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_process_delete_user_interactive_data(add_user, post_delete_user):
+    # Prepare data
+    global interactive_test_data
+    interactive_test_data['callback_id'] = 'delete_user'
+
+    # Lauch clocking process
+    try:
+        slack.process_interactive_data(interactive_test_data)
+    except requests.exceptions.MissingSchema:
+        pass
+
+    assert not user.user_exist(interactive_test_data['user']['id'])
