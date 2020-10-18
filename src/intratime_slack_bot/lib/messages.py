@@ -167,6 +167,8 @@ def set_custom_message(key, parameters):
         Custom slack message
     """
 
+    IMAGE_BASE_URL = 'https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/'
+
     if key == 'ADD_USER_ERROR':
         return f":x: Could not add the user. Status code = {parameters[0]}. Please contact with app administrator :x:"
     elif key == 'DELETE_USER_ERROR':
@@ -181,5 +183,26 @@ def set_custom_message(key, parameters):
     elif key == 'CLOCKING_CHECK_ERROR':
         return f":x: Could not verify your last clocking. Status code = {parameters[0]}. Please, check manually or " \
                 "by consulting your last clocks to verify this clocking action :x:"
+    elif key == 'INVALID_CLOCKING_ACTION':
+        return [
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f":x: Could not clock your action :x:\n *Status*: Failed\n *Reason*: {parameters[0]}\n"
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": f"{IMAGE_BASE_URL}x.png",
+                    "alt_text": "Bad clocking action"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
     else:
         return ""

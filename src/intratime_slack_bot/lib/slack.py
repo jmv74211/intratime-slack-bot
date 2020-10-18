@@ -373,11 +373,16 @@ def process_interactive_data(data):
     """
 
     if data['callback_id'] == CLOCK_CALLBACK:
-
         user_data = user.get_user_data(data['user']['id'])
-        # Clock the action
         token = intratime.get_auth_token(user_data['intratime_mail'], crypt.decrypt(user_data['password']))
+        user_can_clock_this_action = intratime.user_can_clock_this_action(token, data['submission']['action'])
 
+        if not user_can_clock_this_action[0]:
+            post_ephemeral_response_message(messages.set_custom_message('INVALID_CLOCKING_ACTION',
+                                            [user_can_clock_this_action[1]]), data['response_url'], 'blocks')
+            return codes.INVALID_CLOCK_ACTION
+
+        # Clock the action
         request_status = intratime.clocking(data['submission']['action'], token, user_data['intratime_mail'])
 
         if request_status != codes.SUCCESS:
@@ -439,3 +444,5 @@ def process_interactive_data(data):
                                             data['response_url'])
 
         post_ephemeral_response_message(messages.DELETE_USER_SUCCESS, data['response_url'])
+
+    return codes.SUCCESS

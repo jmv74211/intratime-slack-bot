@@ -9,8 +9,10 @@ from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-TEST_GET_ACTION_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'intratime',
-                        'test_get_action.json'))]
+TEST_GET_ACTION_ID_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'intratime',
+                           'test_get_action_id.json'))]
+TEST_GET_ACTION_NAME_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
+                             'intratime', 'test_get_action_name.json'))]
 TEST_CLOCKING_ACTIONS_DATA = [item['action'] for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
                               'intratime', 'test_clocking_actions.json'))]
 TEST_GET_USER_CLOCKS_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
@@ -19,15 +21,15 @@ TEST_GET_USER_CLOCKS_DATA = [item.values() for item in read_json_file_data(os.pa
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('action, output', TEST_GET_ACTION_DATA)
-def test_get_action(action, output):
-    assert intratime.get_action(action) == output
+@pytest.mark.parametrize('action, output', TEST_GET_ACTION_ID_DATA)
+def test_get_action_id(action, output):
+    assert intratime.get_action_id(action) == output
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 def test_get_action_log_error(remove_test_file):
-    intratime.get_action('foo', TEST_FILE)
+    intratime.get_action_id('foo', TEST_FILE)
     assert check_if_log_exist(messages.get(3000), TEST_FILE, logger.ERROR)
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -42,6 +44,13 @@ def test_get_auth_token(remove_test_file):
     assert isinstance(intratime.get_auth_token(INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD, TEST_FILE), str)
     assert check_if_log_exist(messages.make_message(1000, f"for user {INTRATIME_TEST_USER_EMAIL}"), TEST_FILE,
                               logger.DEBUG)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('action, output', TEST_GET_ACTION_NAME_DATA)
+def test_get_action_name(action, output):
+    assert intratime.get_action_name(action) == output
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -95,3 +104,68 @@ def test_get_user_clocks_bad_token():
 def test_get_user_clocks(token, datetime_from, datetime_to, action, result):
     data_result = intratime.get_user_clocks(token, datetime_from, datetime_to, action, TEST_FILE)
     assert data_result == result
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_get_last_clock(token, pre_clock_in, post_clock_out):
+    assert intratime.get_last_clock(token)['INOUT_TYPE'] == intratime.get_action_id(intratime.IN_ACTION)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_get_last_clock_type(token, pre_clock_in, post_clock_out):
+    assert intratime.get_last_clock_type(token) == intratime.IN_ACTION
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_user_can_clock_in_action(token, pre_clock_in, post_clock_out):
+    def message(action): return f"Your last clock action was `IN`, so you can not clock `{action.upper()}` action. " \
+                                 "Available actions: `['PAUSE', 'OUT']`"
+
+    assert intratime.user_can_clock_this_action(token, intratime.IN_ACTION) == (False, message(intratime.IN_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.PAUSE_ACTION) == (True, None)
+    assert intratime.user_can_clock_this_action(token, intratime.RETURN_ACTION) == (False,
+                                                                                    message(intratime.RETURN_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.OUT_ACTION) == (True, None)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_user_can_clock_pause_action(token, pre_clock_in, pre_clock_pause, post_clock_out):
+    def message(action): return f"Your last clock action was `PAUSE`, so you can not clock `{action.upper()}` " \
+                                 "action. Available actions: `['RETURN']`"
+
+    assert intratime.user_can_clock_this_action(token, intratime.IN_ACTION) == (False, message(intratime.IN_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.PAUSE_ACTION) == (False,
+                                                                                   message(intratime.PAUSE_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.RETURN_ACTION) == (True, None)
+    assert intratime.user_can_clock_this_action(token, intratime.OUT_ACTION) == (False, message(intratime.OUT_ACTION))
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_user_can_clock_return_action(token, pre_clock_in, pre_clock_pause, pre_clock_return, post_clock_out):
+    def message(action): return f"Your last clock action was `RETURN`, so you can not clock `{action.upper()}` " \
+                                 "action. Available actions: `['PAUSE', 'OUT']`"
+
+    assert intratime.user_can_clock_this_action(token, intratime.IN_ACTION) == (False, message(intratime.IN_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.PAUSE_ACTION) == (True, None)
+    assert intratime.user_can_clock_this_action(token, intratime.RETURN_ACTION) == (False,
+                                                                                    message(intratime.RETURN_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.OUT_ACTION) == (True, None)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_user_can_clock_out_action(token, pre_clock_in, pre_clock_out):
+    def message(action): return f"Your last clock action was `OUT`, so you can not clock `{action.upper()}` action. " \
+                                 "Available actions: `['IN']`"
+
+    assert intratime.user_can_clock_this_action(token, intratime.IN_ACTION) == (True, None)
+    assert intratime.user_can_clock_this_action(token, intratime.PAUSE_ACTION) == (False,
+                                                                                   message(intratime.PAUSE_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.RETURN_ACTION) == (False,
+                                                                                    message(intratime.RETURN_ACTION))
+    assert intratime.user_can_clock_this_action(token, intratime.OUT_ACTION) == (False, message(intratime.OUT_ACTION))

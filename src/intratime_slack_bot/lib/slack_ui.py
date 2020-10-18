@@ -10,19 +10,19 @@ def get_clock_ui():
                 "name": "action",
                 "options": [
                     {
-                        "label": "Entry",
+                        "label": "IN",
                         "value": "in"
                     },
                     {
-                        "label": "Pause",
+                        "label": "PAUSE",
                         "value": "pause"
                     },
                     {
-                        "label": "Return",
+                        "label": "RETURN",
                         "value": "return"
                     },
                     {
-                        "label": "Leave",
+                        "label": "OUT",
                         "value": "out"
                     }
                 ]

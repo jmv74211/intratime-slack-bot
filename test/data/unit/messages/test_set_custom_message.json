@@ -35,6 +35,32 @@
         "expected_result": ":x: Could not verify your last clocking. Status code = 15. Please, check manually or by consulting your last clocks to verify this clocking action :x:"
     },
     {
+        "key": "INVALID_CLOCKING_ACTION",
+        "parameters": [
+            "test"
+        ],
+        "expected_result": [
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Could not clock your action :x:\n *Status*: Failed\n *Reason*: test\n"
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": "https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/x.png",
+                    "alt_text": "Bad clocking action"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
+    },
+    {
         "key": "",
         "parameters": [],
         "expected_result": ""
