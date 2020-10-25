@@ -196,7 +196,31 @@ def get_past_datetime_from_current_datetime(seconds):
     str:
         Date in format %Y-%m-%d %H:%M:%S
     """
+
     date_object = datetime.strptime(get_current_date_time(), '%Y-%m-%d %H:%M:%S')
     past_datetime = datetime.strftime(date_object - timedelta(seconds=seconds), '%Y-%m-%d %H:%M:%S')
 
     return past_datetime
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_time_string_from_seconds(seconds):
+    """
+    Function to get the time string from seconds. e.g
+    3660 --> 1h 1m 0s
+
+    Parameters
+    ----------
+    seconds: int
+        Number of seconds
+
+    Returns
+    -------
+    str:
+        Time string in format [x]h [y]m [z]s
+    """
+
+    _time = str(timedelta(seconds=seconds)).split(':')
+
+    return f"{_time[0]}h {_time[1]}m {_time[2]}s"

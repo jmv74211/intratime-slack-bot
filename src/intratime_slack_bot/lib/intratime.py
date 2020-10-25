@@ -9,6 +9,7 @@ from http import HTTPStatus
 from intratime_slack_bot.lib import logger, codes, messages, time_utils
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
+from intratime_slack_bot.lib.time_utils import SECONDS
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -281,6 +282,22 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
 
 
 def get_last_clock(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+    """
+    Function to get the last user clock action
+
+    Parameters
+    ----------
+    token: str
+        Authentication token
+    log_file: str
+        Log file when the action will be logged in case of failure
+
+    Returns
+    -------
+    dict:
+        Last user clock info
+    """
+
     datetime_from = time_utils.get_past_datetime_from_current_datetime(2592000)  # 1 month
     datetime_to = time_utils.get_current_date_time()
     return get_user_clocks(token, datetime_from, datetime_to, None, log_file)[0]
@@ -289,12 +306,44 @@ def get_last_clock(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
 
 
 def get_last_clock_type(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+    """
+    Function to get the last user clock action type. e.g: PAUSE
+
+    Parameters
+    ----------
+    token: str
+        Authentication token
+    log_file: str
+        Log file when the action will be logged in case of failure
+
+    Returns
+    -------
+    str:
+        Last user clock type
+    """
+
     return get_action_name(get_last_clock(token, log_file)['INOUT_TYPE'])
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 def user_can_clock_this_action(token, action):
+    """
+    Function to check if the user can clock an action
+
+    Parameters
+    ----------
+    token: str
+        Authentication token
+    action: str
+        Action to check: [in, pause, return, out]
+
+    Returns
+    -------
+    boolean:
+        True if the user can clock that action (action compatible with the previous one), False otherwise
+    """
+
     last_user_clock_action = get_last_clock_type(token)
 
     clock_data = {
@@ -330,3 +379,87 @@ def user_can_clock_this_action(token, action):
         return (False, clock_data[last_user_clock_action]['message'])
     else:
         return (True, None)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_parsed_clock_data(token, datetime_from, datetime_to):
+    """
+    Function to get the action and datetime info from user clock data returned by the intratime API
+
+    Parameters
+    ----------
+    token: str
+        Authentication token
+    datetime_from: str
+        Lower datetime limit
+    datetime_to: str
+        Upper datetime limit
+
+    Returns
+    -------
+    list:
+        List with parsed clock user data
+    """
+
+    user_clocks = get_user_clocks(token, datetime_from, datetime_to)
+
+    data = [{"action": get_action_name(item['INOUT_TYPE']), "datetime": item['INOUT_DATE']} for item in user_clocks]
+
+    return data
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_worked_time(data):
+    """
+    Function to get the worked time in a specified range time
+
+    Parameters
+    ----------
+    data: list
+        Parsed clock data list (data returned from get_parsed_clock_data function)
+
+    Returns
+    -------
+    str:
+        Time worked in the specified range. Format:  [x]h [y]m [z]s
+    """
+
+    num_seconds = 0
+    before_action = ''
+
+    datetimes = {
+        IN_ACTION: "",
+        PAUSE_ACTION:  "",
+        RETURN_ACTION: "",
+        OUT_ACTION: ""
+    }
+
+    invalid_actions = {
+        IN_ACTION: [IN_ACTION, RETURN_ACTION, PAUSE_ACTION],
+        RETURN_ACTION: [RETURN_ACTION, IN_ACTION, OUT_ACTION],
+        PAUSE_ACTION: [PAUSE_ACTION, OUT_ACTION],
+        OUT_ACTION: [OUT_ACTION, PAUSE_ACTION]
+    }
+
+    for item in data:
+        if before_action in invalid_actions[item['action']]:
+            return codes.INVALID_CLOCK_HISTORY
+
+        datetimes[item['action']] = item['datetime']
+
+        if item['action'] == PAUSE_ACTION and before_action == IN_ACTION:
+            num_seconds += time_utils.get_time_difference(datetimes[IN_ACTION], datetimes[PAUSE_ACTION], SECONDS)
+        elif item['action'] == OUT_ACTION and before_action == IN_ACTION:
+            num_seconds += time_utils.get_time_difference(datetimes[IN_ACTION], datetimes[OUT_ACTION], SECONDS)
+        elif item['action'] == OUT_ACTION and before_action == RETURN_ACTION:
+            num_seconds += time_utils.get_time_difference(datetimes[RETURN_ACTION], datetimes[OUT_ACTION], SECONDS)
+        elif item['action'] == PAUSE_ACTION and before_action == RETURN_ACTION:
+            num_seconds += time_utils.get_time_difference(datetimes[RETURN_ACTION], datetimes[PAUSE_ACTION], SECONDS)
+
+        before_action = item['action']
+
+    worked_time = time_utils.get_time_string_from_seconds(num_seconds)
+
+    return worked_time

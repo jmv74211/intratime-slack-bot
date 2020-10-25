@@ -1,0 +1,207 @@
+[
+    {
+        "data": [
+            {
+                "action": "out",
+                "datetime": "2020-10-21 07:55:00"
+            },
+            {
+                "action": "in",
+                "datetime": "2020-10-21 07:56:00"
+            },
+            {
+                "action": "out",
+                "datetime": "2020-10-21 12:56:00"
+            }
+        ],
+        "expected_result": "5h 00m 00s"
+    },
+    {
+        "data": [
+            {
+                "action": "return",
+                "datetime": "2020-10-21 05:55:00"
+            },
+            {
+                "action": "out",
+                "datetime": "2020-10-21 05:56:00"
+            },
+            {
+                "action": "in",
+                "datetime": "2020-10-21 05:57:00"
+            },
+            {
+                "action": "out",
+                "datetime": "2020-10-21 08:57:00"
+            }
+        ],
+        "expected_result": "3h 01m 00s"
+    },
+    {
+        "data": [
+            {
+                "action": "in",
+                "datetime": "2020-10-21 08:00:00"
+            },
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 14:00:00"
+            },
+            {
+                "action": "return",
+                "datetime": "2020-10-21 15:00:00"
+            },
+            {
+                "action": "out",
+                "datetime": "2020-10-22 08:00:00"
+            }
+        ],
+        "expected_result": "23h 00m 00s"
+    },
+    {
+        "data": [
+            {
+                "action": "in",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 10:30:00"
+            },
+            {
+                "action": "return",
+                "datetime": "2020-10-21 11:30:00"
+            },
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 14:00:00"
+            },
+            {
+                "action": "return",
+                "datetime": "2020-10-21 14:45:00"
+            },
+            {
+                "action": "out",
+                "datetime": "2020-10-21 18:15:00"
+            }
+        ],
+        "expected_result": "7h 45m 00s"
+    },
+    {
+        "data": [
+            {
+                "action": "in",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "in",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "return",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "in",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "in",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "return",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "return",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "in",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "return",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "out",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "return",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "out",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    },
+    {
+        "data": [
+            {
+                "action": "pause",
+                "datetime": "2020-10-21 08:45:00"
+            },
+            {
+                "action": "out",
+                "datetime": "2020-10-21 10:30:00"
+            }
+        ],
+        "expected_result": -1
+    }
+]

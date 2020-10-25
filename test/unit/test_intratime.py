@@ -17,6 +17,10 @@ TEST_CLOCKING_ACTIONS_DATA = [item['action'] for item in read_json_file_data(os.
                               'intratime', 'test_clocking_actions.json'))]
 TEST_GET_USER_CLOCKS_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
                              'intratime', 'test_get_user_clocks.json'))]
+TEST_GET_PARSED_CLOCK_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
+                              'intratime', 'test_get_parsed_clock_data.json'))]
+TEST_GET_WORKED_TIME_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
+                             'intratime', 'test_get_worked_time.json'))]
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -169,3 +173,17 @@ def test_user_can_clock_out_action(token, pre_clock_in, pre_clock_out):
     assert intratime.user_can_clock_this_action(token, intratime.RETURN_ACTION) == (False,
                                                                                     message(intratime.RETURN_ACTION))
     assert intratime.user_can_clock_this_action(token, intratime.OUT_ACTION) == (False, message(intratime.OUT_ACTION))
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('datetime_from, datetime_to, expected_result', TEST_GET_PARSED_CLOCK_DATA)
+def test_get_parsed_clock_data(token, datetime_from, datetime_to, expected_result):
+    assert intratime.get_parsed_clock_data(token, datetime_from, datetime_to) == expected_result
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('data, expected_result', TEST_GET_WORKED_TIME_DATA)
+def test_get_worked_time(token, data, expected_result):
+    assert intratime.get_worked_time(data) == expected_result

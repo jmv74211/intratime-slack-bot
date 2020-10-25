@@ -67,3 +67,9 @@ def test_date_included_in_range():
 
 def test_convert_datetime_string_to_date_string():
     assert time_utils.convert_datetime_string_to_date_string(DATETIME_FROM) == '2020-09-01'
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_time_string_from_seconds():
+    assert time_utils.get_time_string_from_seconds(3680) == '1h 01m 20s'
