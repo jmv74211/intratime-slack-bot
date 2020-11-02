@@ -59,6 +59,11 @@ def get_interactive_data():
         if not intratime.check_user_credentials(user_data['intratime_mail'], crypt.decrypt(user_data['password'])):
             return jsonify(slack.BAD_BD_CREDENTIALS), HTTPStatus.OK
 
+    elif data['callback_id'] == slack.CLOCK_HISTORY_CALLBACK:
+        # Check if the user already exists
+        if not user.user_exist(data['user']['id']):
+            return jsonify(slack.CLOCKING_USER_NOT_FOUND), HTTPStatus.OK
+
     elif data['callback_id'] == slack.ADD_USER_CALLBACK:
         # Check if the user already exists
         if user.user_exist(data['user']['id']):
@@ -173,6 +178,27 @@ def delete_user():
     data = request.get_data().decode('utf-8')
 
     api_data = slack.get_api_data(data, 'delete_user')
+
+    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
+
+    return make_response('', HTTPStatus.OK)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@app.route(warehouse.HISTORY_REQUEST, methods=['POST'])
+def user_clock_history():
+    """
+    Description: Endpoint to get the user clock history
+
+    Input_data:
+
+    Output_data: {}, 200
+    """
+
+    data = request.get_data().decode('utf-8')
+
+    api_data = slack.get_api_data(data, 'user_clock_history')
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 

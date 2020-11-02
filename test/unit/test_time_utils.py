@@ -52,11 +52,11 @@ def test_get_next_day():
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def test_sum_days_to_date():
-    assert time_utils.sum_days_to_date(DATE, 5) == '2020-10-06'
+def test_subtract_days_to_datetime():
+    assert time_utils.subtract_days_to_datetime(DATETIME_TO, 1) == '2020-09-25 05:00:00'
+    assert time_utils.subtract_days_to_datetime(DATETIME_TO, 4) == '2020-09-22 05:00:00'
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 def test_date_included_in_range():
     assert time_utils.date_included_in_range(DATETIME_FROM, DATETIME_TO, '2020-9-07 10:00:00')
@@ -71,5 +71,19 @@ def test_convert_datetime_string_to_date_string():
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_time_string_from_seconds():
+def test_get_time_string_from_seconds():
     assert time_utils.get_time_string_from_seconds(3680) == '1h 01m 20s'
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_get_week_day():
+    assert time_utils.get_week_day(DATETIME_FROM) == 1
+    assert time_utils.get_week_day(DATETIME_TO) == 5
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_get_month_day():
+    assert time_utils.get_month_day(DATETIME_FROM) == 1
+    assert time_utils.get_month_day(DATETIME_TO) == 26

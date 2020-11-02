@@ -141,20 +141,6 @@ def test_process_clock_interactive_data(add_user, token, post_delete_user, post_
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def test_process_clock_interactive_data_invalid_action(add_user, token, post_delete_user, pre_clock_in, post_clock_out):
-    global interactive_test_data
-    interactive_test_data['callback_id'] = 'clock'
-    interactive_test_data['submission']['action'] = 'in'
-
-    # Lauch clocking process
-    try:
-        assert slack.process_interactive_data(interactive_test_data) == codes.INVALID_CLOCK_ACTION
-    except requests.exceptions.MissingSchema:
-        pass
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
 def test_process_sign_up_interactive_data(pre_delete_user, post_delete_user):
     # Prepare data
     global interactive_test_data

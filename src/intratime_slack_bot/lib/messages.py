@@ -204,5 +204,7 @@ def set_custom_message(key, parameters):
                 "type": "divider"
             }
         ]
+    elif key == 'TIME_WORKED':
+        return f":timer_clock: Your working time {parameters[0]} is *{parameters[1]}* :timer_clock:"
     else:
         return ""

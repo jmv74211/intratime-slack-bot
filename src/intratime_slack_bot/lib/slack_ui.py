@@ -109,3 +109,56 @@ def get_delete_user_ui():
             }
         ]
     }
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_user_history_ui():
+    return {
+        "title": "Intratime: History",
+        "submit_label": "Submit",
+        "callback_id": "user_clock_history",
+        "elements": [
+            {
+                "label": "Select the category and range",
+                "name": "history_action",
+                "type": "select",
+                "option_groups": [
+                    {
+                        "label": "Worked hours",
+                        "options": [
+                            {
+                                "label": "Today hours",
+                                "value": "today_hours"
+                            },
+                            {
+                                "label": "Week hours",
+                                "value": "week_hours"
+                            },
+                            {
+                                "label": "Month hours",
+                                "value": "month_hours"
+                            }
+                        ]
+                    },
+                    {
+                        "label": "Full history",
+                        "options": [
+                            {
+                                "label": "Today history",
+                                "value": "today_history"
+                            },
+                            {
+                                "label": "Week history",
+                                "value": "week_history"
+                            },
+                            {
+                                "label": "Month history",
+                                "value": "month_history"
+                            }
+                        ]
+                    },
+                ]
+            }
+        ]
+    }

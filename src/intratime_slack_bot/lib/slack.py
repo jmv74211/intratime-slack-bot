@@ -16,6 +16,7 @@ ADD_USER_CALLBACK = 'sign_up'
 UPDATE_USER_CALLBACK = 'update_user'
 DELETE_USER_CALLBACK = 'delete_user'
 CLOCK_CALLBACK = 'clock'
+CLOCK_HISTORY_CALLBACK = 'user_clock_history'
 
 # UI ERRORS
 USER_ALREADY_REGISTERED_MESSAGE = {'errors': [{'name': 'email', 'error': messages.USER_ALREADY_REGISTERED}]}
@@ -25,7 +26,7 @@ BAD_CREDENTIALS = {'errors': [
                     ]}
 DELETE_USER_NOT_FOUND = {'errors': [{'name': 'delete', 'error': messages.USER_NOT_FOUND}]}
 UPDATE_USER_NOT_FOUND = {'errors': [{'name': 'email', 'error': messages.USER_NOT_FOUND}]}
-CLOCKING_USER_NOT_FOUND = {'errors': [{'name': 'action', 'error': messages.USER_NOT_FOUND}]}
+CLOCKING_USER_NOT_FOUND = {'errors': [{'name': 'history_action', 'error': messages.USER_NOT_FOUND}]}
 CLOCKING_BAD_USER_CREDENTIALS = {'errors': [{'name': 'action', 'error': messages.USER_NOT_FOUND}]}
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -291,6 +292,8 @@ def get_api_data(data, callback_id):
 
     if callback_id == CLOCK_CALLBACK:
         dialog = slack_ui.get_clock_ui()
+    elif callback_id == CLOCK_HISTORY_CALLBACK:
+        dialog = slack_ui.get_user_history_ui()
     elif callback_id == ADD_USER_CALLBACK:
         dialog = slack_ui.get_sign_up_ui()
     elif callback_id == UPDATE_USER_CALLBACK:
@@ -325,6 +328,7 @@ def generate_clock_message(data):
     list:
         Block list with a custom message to show in slack client
     """
+
     if 'intratime_mail' not in data or 'datetime' not in data or 'action' not in data:
         return codes.BAD_REQUEST_DATA
 
@@ -362,6 +366,52 @@ def generate_clock_message(data):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def process_clock_history_action(token, action):
+    """
+    Function to process clock history action and returns user selected data
+
+    Parameters
+    ----------
+    token: str
+        Intratime user token authentication
+    action: str
+        Callback action
+
+    Returns
+    ------
+    tuple: (int)(list)
+        (worked_hours)(history_data)
+    int:
+        codes.INVALID_HISTORY_ACTION if action is not supported
+    """
+
+    tomorrow_datetime = f"{time_utils.get_next_day(time_utils.get_current_date())} 00:00:00"
+    today_datetime = f"{time_utils.get_current_date()} 00:00:00"
+    lower_limit_datetime = ''
+
+    if action == 'today_hours' or action == 'today_history':
+        lower_limit_datetime = today_datetime
+    elif action == 'week_hours' or action == 'week_history':
+        lower_limit_datetime = time_utils.subtract_days_to_datetime(today_datetime,
+                                                                    time_utils.get_week_day(today_datetime))
+    elif action == 'month_hours' or action == 'month_history':
+        lower_limit_datetime = time_utils.subtract_days_to_datetime(today_datetime,
+                                                                    time_utils.get_month_day(today_datetime))
+    else:
+        return codes.INVALID_HISTORY_ACTION
+
+    data = intratime.get_parsed_clock_data(token, lower_limit_datetime, tomorrow_datetime)
+    data.reverse()  # It is necessary to reverse the list to check and calculate the history hours
+    worked_hours = intratime.get_worked_time(data)
+
+    if 'hours' in action:
+        return (worked_hours, [])
+
+    return (worked_hours, data)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def process_interactive_data(data):
     """
     Function to process interactive data from slack service
@@ -380,7 +430,6 @@ def process_interactive_data(data):
         if not user_can_clock_this_action[0]:
             post_ephemeral_response_message(messages.set_custom_message('INVALID_CLOCKING_ACTION',
                                             [user_can_clock_this_action[1]]), data['response_url'], 'blocks')
-            return codes.INVALID_CLOCK_ACTION
 
         # Clock the action
         request_status = intratime.clocking(data['submission']['action'], token, user_data['intratime_mail'])
@@ -401,8 +450,26 @@ def process_interactive_data(data):
 
         post_ephemeral_response_message(clock_message, data['response_url'], 'blocks')
 
-    elif data['callback_id'] == ADD_USER_CALLBACK:
+    elif data['callback_id'] == CLOCK_HISTORY_CALLBACK:
+        user_data = user.get_user_data(data['user']['id'])
+        user_query_action = data['submission']['history_action']
 
+        token = intratime.get_auth_token(user_data['intratime_mail'], crypt.decrypt(user_data['password']))
+        time_worked, history = process_clock_history_action(token, user_query_action)
+
+        if len(history) == 0:
+            custom_message = {
+                'today_hours': 'on today',
+                'week_hours': 'on this week',
+                'month_hours': 'on this month'
+            }
+
+            post_ephemeral_response_message(messages.set_custom_message('TIME_WORKED',
+                                                                        [custom_message[user_query_action],
+                                                                         time_worked]),
+                                                                        data['response_url'])
+
+    elif data['callback_id'] == ADD_USER_CALLBACK:
         cyphered_password = crypt.encrypt(data['submission']['password'])
 
         # Create new user in user service
@@ -420,7 +487,6 @@ def process_interactive_data(data):
         post_ephemeral_response_message(messages.ADD_USER_SUCCESS, data['response_url'])
 
     elif data['callback_id'] == UPDATE_USER_CALLBACK:
-
         user_data = user.get_user_data(data['user']['id'])
         user_data['intratime_mail'] = data['submission']['email']
         user_data['password'] = crypt.encrypt(data['submission']['password'])
@@ -435,7 +501,6 @@ def process_interactive_data(data):
         post_ephemeral_response_message(messages.UPDATE_USER_SUCCESS, data['response_url'])
 
     elif data['callback_id'] == DELETE_USER_CALLBACK:
-
         # Delete an user
         request_status = user.delete_user(data['user']['id'])
 
@@ -444,5 +509,3 @@ def process_interactive_data(data):
                                             data['response_url'])
 
         post_ephemeral_response_message(messages.DELETE_USER_SUCCESS, data['response_url'])
-
-    return codes.SUCCESS

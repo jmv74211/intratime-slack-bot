@@ -423,7 +423,7 @@ def get_worked_time(data):
     Returns
     -------
     str:
-        Time worked in the specified range. Format:  [x]h [y]m [z]s
+        Time worked in the specified range. Format: [x]h [y]m [z]s
     """
 
     num_seconds = 0

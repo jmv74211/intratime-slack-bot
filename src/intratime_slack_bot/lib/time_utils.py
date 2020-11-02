@@ -108,25 +108,25 @@ def get_next_day(date):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def sum_days_to_date(date, days):
+def subtract_days_to_datetime(date_time, days):
     """
-    Get the next day from a date
+    Subtract a number of days from a given date
 
     Parameters
     ----------
-    date:str
-        Date in format %Y-%m-%d
-    days:int
-        Number of days to add
+    date_time: str
+        Date in format %Y-%m-%d %H:%M:%S
+    days: int
+        Number of days to subtract
 
     Returns
     -------
     str:
-        Date in format %Y-%m-%d
+        Datetime in format %Y-%m-%d %H:%M:%S
     """
 
-    date_object = datetime.strptime(date, '%Y-%m-%d')
-    return datetime.strftime(date_object + timedelta(days=days), '%Y-%m-%d')
+    date_object = datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
+    return datetime.strftime(date_object - timedelta(days=days), '%Y-%m-%d %H:%M:%S')
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -224,3 +224,45 @@ def get_time_string_from_seconds(seconds):
     _time = str(timedelta(seconds=seconds)).split(':')
 
     return f"{_time[0]}h {_time[1]}m {_time[2]}s"
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_week_day(date_time):
+    """
+    Function to get current day of the week, where Monday is 0 and Sunday is 6.
+
+    Parameters
+    ----------
+    date_time: str
+        datetime to find out what day of the week it is
+
+    Returns
+    -------
+    int:
+        [0-6] where Monday is 0 and Sunday is 6
+    """
+
+    date_object = datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
+    return date_object.weekday()
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_month_day(date_time):
+    """
+    Function to get current day of the month.
+
+    Parameters
+    ----------
+    date_time: str
+        datetime to get the month day
+
+    Returns
+    -------
+    int:
+        Month day
+    """
+
+    date_object = datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
+    return int(date_object.strftime("%d"))
