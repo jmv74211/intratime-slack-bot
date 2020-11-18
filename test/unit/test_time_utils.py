@@ -1,4 +1,5 @@
 import pytest
+import freezegun
 
 from datetime import datetime
 from intratime_slack_bot.lib import time_utils, logger, codes, messages
@@ -58,6 +59,7 @@ def test_subtract_days_to_datetime():
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_date_included_in_range():
     assert time_utils.date_included_in_range(DATETIME_FROM, DATETIME_TO, '2020-9-07 10:00:00')
     assert not time_utils.date_included_in_range(DATETIME_TO, DATETIME_TO, '2020-10-06 10:00:00')
@@ -87,3 +89,18 @@ def test_get_week_day():
 def test_get_month_day():
     assert time_utils.get_month_day(DATETIME_FROM) == 1
     assert time_utils.get_month_day(DATETIME_TO) == 26
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_get_first_week_day():
+    for day in range(2, 9):
+        with freezegun.freeze_time(f'2020-11-{day} 20:03:43'):
+            assert time_utils.get_first_week_day() == '2020-11-02 00:00:00'
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def test_get_first_month_day():
+    with freezegun.freeze_time('2020-11-03 20:03:43'):
+        assert time_utils.get_first_month_day() == '2020-11-01 00:00:00'

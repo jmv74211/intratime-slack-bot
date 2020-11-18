@@ -1,4 +1,4 @@
-from intratime_slack_bot.lib import logger
+from intratime_slack_bot.lib import logger, time_utils
 from intratime_slack_bot.config import settings
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -23,6 +23,8 @@ ADD_USER_SUCCESS = ':heavy_check_mark: The user has been created successfully :h
 DELETE_USER_SUCCESS = ':heavy_check_mark: The user has been deleted successfully :heavy_check_mark:'
 UPDATE_USER_SUCCESS = ':heavy_check_mark: The user info has been updated successfully :heavy_check_mark:'
 CLOCKING_ACTION_SUCCESS = ':heavy_check_mark: Your clocking has been registered successfully :heavy_check_mark:'
+
+IMAGE_BASE_URL = 'https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/'
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -167,8 +169,6 @@ def set_custom_message(key, parameters):
         Custom slack message
     """
 
-    IMAGE_BASE_URL = 'https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/'
-
     if key == 'ADD_USER_ERROR':
         return f":x: Could not add the user. Status code = {parameters[0]}. Please contact with app administrator :x:"
     elif key == 'DELETE_USER_ERROR':
@@ -204,7 +204,186 @@ def set_custom_message(key, parameters):
                 "type": "divider"
             }
         ]
-    elif key == 'TIME_WORKED':
+    elif key == 'WORKED_TIME':
         return f":timer_clock: Your working time {parameters[0]} is *{parameters[1]}* :timer_clock:"
     else:
         return ""
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def write_slack_divider():
+    """
+    Function to write a slack divider
+
+    Returns
+    -------
+    dict:
+        Block message
+    """
+
+    return {
+        "type": "divider"
+    }
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def write_slack_markdown(message):
+    """
+    Function to write a slack markdown section
+
+    Parameters
+    ----------
+    message: str
+        Message
+
+    Returns
+    -------
+    dict:
+        Block message
+    """
+
+    return {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"{message}"
+        }
+    }
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def write_slack_header(message):
+    """
+    Function to write date message header
+
+    Parameters
+    ----------
+    message: str
+        Message to include in the header. In this case it cointains the clock register date
+
+    Returns
+    -------
+    dict:
+        Block message
+    """
+
+    return {
+        "type": "header",
+        "text": {
+            "type": "plain_text",
+            "text": f"{message}"
+        }
+    }
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def write_slack_history_register(data):
+    """
+    Function to model the clock register content
+
+    Parameters
+    ----------
+    data: dict
+        Clock register data. It must contains action and datetime keys
+
+    Returns
+    -------
+    dict:
+        Block message
+    """
+
+    return {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"*Action*: {data['action'].upper()}\n *Datetime*: {data['datetime']}"
+        },
+        "accessory": {
+            "type": "image",
+            "image_url": f"{IMAGE_BASE_URL}{data['action']}_4.png",
+            "alt_text": "Clocking action image"
+        }
+    }
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def generate_slack_history_report(token, action, data):
+    """
+    Function to build the slack history message
+
+    Parameters
+    ----------
+    token: str
+        Intratime authentication token
+    action: str
+       String enum: today_history, week_history or month_history
+    data: list
+       List with clock history data
+
+    Returns
+    -------
+    list:
+        List with message blocks to send to slack
+    """
+
+    custom_message = {
+        'today_history': {
+            'title': 'Today',
+            'from': f"{time_utils.get_current_date()} 00:00:00"
+        },
+        'week_history': {
+            'title': 'Week',
+            'from': f"{time_utils.get_first_week_day()}"
+        },
+        'month_history': {
+            'title': 'Month',
+            'from': f"{time_utils.get_first_month_day()}"
+        }
+    }
+
+    blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*{custom_message[action]['title']}* history.\n From _*{custom_message[action]['from']}*_"
+                        f" to _*{time_utils.get_current_date_time()}*_"
+            }
+        }
+    ]
+
+    data.reverse()
+    block_list = []
+
+    if len(data) > 0:
+        item_counter = 0
+        day = ''
+
+        while item_counter < len(data):
+            if time_utils.get_day(data[item_counter]['datetime']) == day:
+                blocks.append(write_slack_history_register(data[item_counter]))
+                blocks.append(write_slack_divider())
+            else:
+                block_list.append(blocks)
+                blocks = []
+                day = time_utils.get_day(data[item_counter]['datetime'])
+                date = time_utils.convert_datetime_string_to_date_string(data[item_counter]['datetime'])
+
+                blocks.append(write_slack_header(f"{date}"))
+                blocks.append(write_slack_divider())
+                blocks.append(write_slack_history_register(data[item_counter]))
+                blocks.append(write_slack_divider())
+
+            item_counter += 1
+    else:
+        blocks.append(write_slack_markdown("No records available"))
+
+    # Add last iteration block (while) or (else) blocks
+    block_list.append(blocks)
+
+    return block_list

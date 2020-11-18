@@ -266,3 +266,57 @@ def get_month_day(date_time):
 
     date_object = datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
     return int(date_object.strftime("%d"))
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_first_week_day():
+    """
+    Function to get first datetime of current week
+
+    Returns
+    -------
+    str:
+        %Y-%m-%d %H:%M:%S: First day of week e.g 2020-11-02 00:00:00
+    """
+
+    date_time = f"{get_current_date()} 00:00:00"
+    week_init_date = datetime.strptime(subtract_days_to_datetime(date_time, get_week_day(date_time)),
+                                       '%Y-%m-%d %H:%M:%S').date()
+    week_init_datetime = f"{datetime.strftime(week_init_date, '%Y-%m-%d')} 00:00:00"
+
+    return week_init_datetime
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_first_month_day():
+    """
+    Function to get first datetime of current month
+
+    Returns
+    -------
+    str:
+        %Y-%m-%d %H:%M:%S: First day of month e.g 2020-11-01 00:00:00
+    """
+
+    date_time = f"{get_current_date()} 00:00:00"
+    date_time_object = datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S').replace(day=1, hour=0, minute=0, second=0)
+    month_init_datetime = datetime.strftime(date_time_object, '%Y-%m-%d %H:%M:%S')
+
+    return month_init_datetime
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_day(date_time):
+    """
+    Function to convert datetime to date format
+
+    Returns
+    -------
+    str:
+        %Y-%m-%d date
+    """
+
+    return datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S').day

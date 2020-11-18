@@ -191,7 +191,8 @@ def user_clock_history():
     """
     Description: Endpoint to get the user clock history
 
-    Input_data:
+    Input_data: b'token=x&team_id=x&team_domain=x&channel_id=x&channel_name=x&user_id=x&user_name=x&
+                  command=%2Fhistory&text=&api_app_id=x&response_url=x&trigger_id=x'
 
     Output_data: {}, 200
     """
@@ -199,6 +200,28 @@ def user_clock_history():
     data = request.get_data().decode('utf-8')
 
     api_data = slack.get_api_data(data, 'user_clock_history')
+
+    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
+
+    return make_response('', HTTPStatus.OK)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@app.route(warehouse.WORKED_TIME_REQUEST, methods=['POST'])
+def user_worked_time():
+    """
+    Description: Endpoint to get the user worked time
+
+    Input_data: b'token=x&team_id=x&team_domain=x&channel_id=x&channel_name=x&user_id=x&user_name=x&
+                  command=%2Ftime&text=&api_app_id=x&response_url=x&trigger_id=x'
+
+    Output_data: {}, 200
+    """
+
+    data = request.get_data().decode('utf-8')
+
+    api_data = slack.get_api_data(data, 'user_worked_time')
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 

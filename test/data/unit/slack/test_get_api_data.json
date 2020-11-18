@@ -132,48 +132,60 @@
             "token": "test",
             "trigger_id": "test",
             "dialog":  {
-                "title": "Intratime: History",
+                "title": "Intratime: Clock history",
                 "submit_label": "Submit",
                 "callback_id": "user_clock_history",
                 "elements": [
                     {
-                        "label": "Select the category and range",
-                        "name": "history_action",
+                        "label": "Select the time range",
                         "type": "select",
-                        "option_groups": [
+                        "name": "action",
+                        "options": [
                             {
-                                "label": "Worked hours",
-                                "options": [
-                                    {
-                                        "label": "Today hours",
-                                        "value": "today_hours"
-                                    },
-                                    {
-                                        "label": "Week hours",
-                                        "value": "week_hours"
-                                    },
-                                    {
-                                        "label": "Month hours",
-                                        "value": "month_hours"
-                                    }
-                                ]
+                                "label": "Today history",
+                                "value": "today_history"
                             },
                             {
-                                "label": "Full history",
-                                "options": [
-                                    {
-                                        "label": "Today history",
-                                        "value": "today_history"
-                                    },
-                                    {
-                                        "label": "Week history",
-                                        "value": "week_history"
-                                    },
-                                    {
-                                        "label": "Month history",
-                                        "value": "month_history"
-                                    }
-                                ]
+                                "label": "Week history",
+                                "value": "week_history"
+                            },
+                            {
+                                "label": "Month history",
+                                "value": "month_history"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "data": "token=testo&team_id=testS&team_domain=test56&channel_id=test&channel_name=slack-bot-and-commands&user_id=test&user_name=test&command=%time&text=&api_app_id=ARSTL2X6F&response_url=hs4XvBzLgj31ogA5&trigger_id=test",
+        "callback_id": "user_worked_time",
+        "expected_api_data": {
+            "token": "test",
+            "trigger_id": "test",
+            "dialog":  {
+                "title": "Intratime: Worked time",
+                "submit_label": "Submit",
+                "callback_id": "user_worked_time",
+                "elements": [
+                    {
+                        "label": "Select the time range",
+                        "type": "select",
+                        "name": "action",
+                        "options": [
+                            {
+                                "label": "Today hours",
+                                "value": "today_hours"
+                            },
+                            {
+                                "label": "Week hours",
+                                "value": "week_hours"
+                            },
+                            {
+                                "label": "Month hours",
+                                "value": "month_hours"
                             }
                         ]
                     }

@@ -3,6 +3,7 @@ import os
 import re
 import json
 import requests
+import freezegun
 
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
@@ -12,24 +13,31 @@ from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-SLACK_CHANNEL = 'C019Y34PK55'
+SLACK_CHANNEL = settings.SLACK_TEST_CHANNEL
 TEXT = 'Test message'
+TEXT_BLOCK = [{'type': 'section', 'text': {'type': 'mrkdwn', 'text': 'test'}}]
 TEXT_ATTACHEMENT = [{"text": "Test message 2"}]
-TEST_USER_ID = 'US6HV86ES'
+TEST_USER_ID = settings.SLACK_TEST_USER_ID
 
-TEST_DECODE_SLACK_ARGS_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'slack',
+SLACK_TEST_DATA_PATH = os.path.join(UNIT_TEST_DATA_PATH, 'slack')
+
+TEST_DECODE_SLACK_ARGS_DATA = [item.values() for item in read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
                                                                                           'test_decode_slack_args.json')
                                                                              )]
 
-TEST_GET_API_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'slack',
+TEST_GET_API_DATA = [item.values() for item in read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
                                                                                 'test_get_api_data.json'))]
 
-TEST_GET_API_NAMES = [item['callback_id'] for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'slack',
+TEST_GET_API_NAMES = [item['callback_id'] for item in read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
                                                                                        'test_get_api_data.json'))]
 
 TEST_GENERATE_CLOCK_MESSAGE_DATA = [item.values() for item in
-                                    read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'slack',
+                                    read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
                                                                      'test_generate_clock_message.json'))]
+
+TEST_PROCESS_CLOCK_HISTORY_ACTION_DATA = [item.values() for item in
+                                          read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
+                                                                           'test_process_clock_history_action.json'))]
 
 interactive_test_data = {'type': 'dialog_submission', 'token': 'test', 'action_ts': 'test', 'team': {'id': 'test',
                          'domain': 'test'}, 'user': {'id': 'test', 'name': 'test'}, 'channel': {'id': 'test',
@@ -54,20 +62,22 @@ def test_validate_message():
 
 def test_post_private_message(remove_test_file):
     # BAD CHANNEL
-    assert slack.post_private_message(TEXT, 'BAD_CHANNEL', TEST_FILE) == codes.BAD_REQUEST_DATA
+    assert slack.post_private_message(TEXT, 'BAD_CHANNEL', log_file=TEST_FILE) == codes.BAD_REQUEST_DATA
     assert check_if_log_exist(messages.make_message(3015, f"channel_not_found"), TEST_FILE, logger.ERROR)
 
     # BAD TOKEN
-    assert slack.post_private_message(TEXT, SLACK_CHANNEL, TEST_FILE, 'BAD_TOKEN') == codes.BAD_REQUEST_DATA
+    assert slack.post_private_message(TEXT, SLACK_CHANNEL, log_file=TEST_FILE, token='BAD_TOKEN') == \
+        codes.BAD_REQUEST_DATA
     assert check_if_log_exist(messages.make_message(3015, f"invalid_auth"), TEST_FILE, logger.ERROR)
 
     # BAD TEXT
-    assert slack.post_private_message(1234, SLACK_CHANNEL, TEST_FILE) == codes.INVALID_VALUE
+    assert slack.post_private_message(1234, SLACK_CHANNEL, log_file=TEST_FILE) == codes.INVALID_VALUE
     assert check_if_log_exist(messages.make_message(3018, f"of message parameter"), TEST_FILE, logger.ERROR)
 
     # SUCCESS MESSAGES
     assert slack.post_private_message(TEXT, SLACK_CHANNEL) == codes.SUCCESS
-    assert slack.post_private_message(TEXT_ATTACHEMENT, SLACK_CHANNEL) == codes.SUCCESS
+    assert slack.post_private_message(TEXT_ATTACHEMENT, SLACK_CHANNEL, 'attachments') == codes.SUCCESS
+    assert slack.post_private_message(TEXT_BLOCK, SLACK_CHANNEL, 'blocks') == codes.SUCCESS
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -187,3 +197,11 @@ def test_process_delete_user_interactive_data(add_user, post_delete_user):
         pass
 
     assert not user.user_exist(interactive_test_data['user']['id'])
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('action, worked_hours, fake_datetime, data', TEST_PROCESS_CLOCK_HISTORY_ACTION_DATA)
+def test_process_clock_history_action(action, worked_hours, fake_datetime, data, token):
+    with freezegun.freeze_time(fake_datetime):
+        assert slack.process_clock_history_action(token, action) == (worked_hours, data)

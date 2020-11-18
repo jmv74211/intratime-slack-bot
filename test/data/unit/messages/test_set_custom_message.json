@@ -61,6 +61,14 @@
         ]
     },
     {
+        "key": "WORKED_TIME",
+        "parameters": [
+            "on today",
+            "4h 30m 20s"
+        ],
+        "expected_result": ":timer_clock: Your working time on today is *4h 30m 20s* :timer_clock:"
+    },
+    {
         "key": "",
         "parameters": [],
         "expected_result": ""

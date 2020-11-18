@@ -115,49 +115,58 @@ def get_delete_user_ui():
 
 def get_user_history_ui():
     return {
-        "title": "Intratime: History",
+        "title": "Intratime: Clock history",
         "submit_label": "Submit",
         "callback_id": "user_clock_history",
         "elements": [
             {
-                "label": "Select the category and range",
-                "name": "history_action",
+                "label": "Select the time range",
                 "type": "select",
-                "option_groups": [
+                "name": "action",
+                "options": [
                     {
-                        "label": "Worked hours",
-                        "options": [
-                            {
-                                "label": "Today hours",
-                                "value": "today_hours"
-                            },
-                            {
-                                "label": "Week hours",
-                                "value": "week_hours"
-                            },
-                            {
-                                "label": "Month hours",
-                                "value": "month_hours"
-                            }
-                        ]
+                        "label": "Today history",
+                        "value": "today_history"
                     },
                     {
-                        "label": "Full history",
-                        "options": [
-                            {
-                                "label": "Today history",
-                                "value": "today_history"
-                            },
-                            {
-                                "label": "Week history",
-                                "value": "week_history"
-                            },
-                            {
-                                "label": "Month history",
-                                "value": "month_history"
-                            }
-                        ]
+                        "label": "Week history",
+                        "value": "week_history"
                     },
+                    {
+                        "label": "Month history",
+                        "value": "month_history"
+                    }
+                ]
+            }
+        ]
+    }
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_user_worked_time_ui():
+    return {
+        "title": "Intratime: Worked time",
+        "submit_label": "Submit",
+        "callback_id": "user_worked_time",
+        "elements": [
+            {
+                "label": "Select the time range",
+                "type": "select",
+                "name": "action",
+                "options": [
+                    {
+                        "label": "Today hours",
+                        "value": "today_hours"
+                    },
+                    {
+                        "label": "Week hours",
+                        "value": "week_hours"
+                    },
+                    {
+                        "label": "Month hours",
+                        "value": "month_hours"
+                    }
                 ]
             }
         ]

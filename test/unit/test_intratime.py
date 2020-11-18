@@ -1,5 +1,6 @@
 import pytest
 import os
+import freezegun
 
 from datetime import datetime, timedelta
 from intratime_slack_bot.config.settings import INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD
@@ -21,6 +22,9 @@ TEST_GET_PARSED_CLOCK_DATA = [item.values() for item in read_json_file_data(os.p
                               'intratime', 'test_get_parsed_clock_data.json'))]
 TEST_GET_WORKED_TIME_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
                              'intratime', 'test_get_worked_time.json'))]
+TEST_GET_CLOCK_DATA_IN_TIME_RANGE_DATA = \
+    [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'intratime',
+                                                                'test_get_clock_data_in_time_range.json'))]
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -187,3 +191,11 @@ def test_get_parsed_clock_data(token, datetime_from, datetime_to, expected_resul
 @pytest.mark.parametrize('data, expected_result', TEST_GET_WORKED_TIME_DATA)
 def test_get_worked_time(token, data, expected_result):
     assert intratime.get_worked_time(data) == expected_result
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('time_range, fake_datetime, data', TEST_GET_CLOCK_DATA_IN_TIME_RANGE_DATA)
+def test_get_clock_data_in_time_range(time_range, fake_datetime, data, token):
+    with freezegun.freeze_time(fake_datetime):
+        assert intratime.get_clock_data_in_time_range(token, time_range) == data

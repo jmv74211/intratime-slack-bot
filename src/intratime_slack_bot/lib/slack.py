@@ -17,6 +17,7 @@ UPDATE_USER_CALLBACK = 'update_user'
 DELETE_USER_CALLBACK = 'delete_user'
 CLOCK_CALLBACK = 'clock'
 CLOCK_HISTORY_CALLBACK = 'user_clock_history'
+WORKED_TIME_CALLBACK = 'user_worked_time'
 
 # UI ERRORS
 USER_ALREADY_REGISTERED_MESSAGE = {'errors': [{'name': 'email', 'error': messages.USER_ALREADY_REGISTERED}]}
@@ -26,7 +27,7 @@ BAD_CREDENTIALS = {'errors': [
                     ]}
 DELETE_USER_NOT_FOUND = {'errors': [{'name': 'delete', 'error': messages.USER_NOT_FOUND}]}
 UPDATE_USER_NOT_FOUND = {'errors': [{'name': 'email', 'error': messages.USER_NOT_FOUND}]}
-CLOCKING_USER_NOT_FOUND = {'errors': [{'name': 'history_action', 'error': messages.USER_NOT_FOUND}]}
+CLOCKING_USER_NOT_FOUND = {'errors': [{'name': 'action', 'error': messages.USER_NOT_FOUND}]}
 CLOCKING_BAD_USER_CREDENTIALS = {'errors': [{'name': 'action', 'error': messages.USER_NOT_FOUND}]}
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -57,8 +58,8 @@ def validate_message(message):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def post_private_message(message, channel, log_file=settings.SLACK_SERVICE_LOG_FILE,
-                         token=settings.SLACK_API_USER_TOKEN):
+def post_private_message(message, channel,  mgs_type='text', log_file=settings.SLACK_SERVICE_LOG_FILE,
+                         token=settings.SLACK_API_USER_TOKEN, as_bot_user=False):
     """
     Function to post a private message in a slack channel
 
@@ -68,10 +69,14 @@ def post_private_message(message, channel, log_file=settings.SLACK_SERVICE_LOG_F
         Message to post
     channel: str
         Channel ID
+    mgs_type: str
+        enum: 'text', 'attachments' or 'blocks' depending on message type
     log_file: str
         Log file when the action will be logged in case of failure or success
     token: str
         Slack API user token
+    as_bot_user: boolean
+        Specifies whether the message is sent as a bot user or a normal user
 
     Returns
     -------
@@ -92,14 +97,13 @@ def post_private_message(message, channel, log_file=settings.SLACK_SERVICE_LOG_F
 
     headers = {'content-type': 'application/x-www-form-urlencoded', 'charset': 'utf8'}
 
-    if isinstance(message, str):
-        message_parameter = 'text'
-    else:
-        message_parameter = 'attachments'
+    if as_bot_user:
+        token = settings.SLACK_API_BOT_TOKEN
 
     request = requests.post(f"{warehouse.SLACK_POST_MESSAGE_URL}?token={token}&channel={channel}&"
-                            f"{message_parameter}={message}", headers=headers)
+                            f"{mgs_type}={message}", headers=headers)
 
+    print(request.status_code)
     if request.status_code != HTTPStatus.OK:
         if request.status_code != HTTPStatus.UNAUTHORIZED:
             logger.log(file=log_file, level=logger.ERROR, message_id=3014)
@@ -125,7 +129,7 @@ def post_private_message(message, channel, log_file=settings.SLACK_SERVICE_LOG_F
 
 
 def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SERVICE_LOG_FILE,
-                           token=settings.SLACK_API_USER_TOKEN):
+                           token=settings.SLACK_API_USER_TOKEN, as_bot_user=False):
     """
     Function to post a ephemeral message in a slack channel
 
@@ -141,6 +145,8 @@ def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SE
         Log file when the action will be logged in case of failure or success
     token: str
         Slack API user token
+    as_bot_user: boolean
+        Specifies whether the message is sent as a bot user or a normal user
 
     Returns
     -------
@@ -165,6 +171,9 @@ def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SE
         message_parameter = 'text'
     else:
         message_parameter = 'attachments'
+
+    if as_bot_user:
+        token = settings.SLACK_API_BOT_TOKEN
 
     request = requests.post(f"{warehouse.SLACK_POST_EPHEMERAL_MESSAGE_URL}?token={token}&channel={channel}&"
                             f"{message_parameter}={message}&user={user_id}", headers=headers)
@@ -204,7 +213,7 @@ def post_ephemeral_response_message(message, response_url, mgs_type='text', log_
     response_url: str
         Response url from user conversation
     mgs_type: str
-        enum: 'text' or 'blocks' depending on message type
+        enum: 'text', 'attachments' or 'blocks' depending on message type
     log_file: str
         Log file when the action will be logged in case of failure or success
 
@@ -218,6 +227,7 @@ def post_ephemeral_response_message(message, response_url, mgs_type='text', log_
         codes.UNDEFINED_ERROR if the error is unknown
         codes.SUCCESS if the message has ben posted successfully
     """
+
     if not validate_message(message):
         logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3018, f"of message parameter"))
         return codes.INVALID_VALUE
@@ -265,6 +275,7 @@ def decode_slack_args(data):
     dict:
         Slack args in dict format
     """
+
     elements = [pair_value for item in data.split('&') for pair_value in item.split('=')]
     return dict(zip(elements[0::2], elements[1::2]))
 
@@ -288,10 +299,13 @@ def get_api_data(data, callback_id):
     dict:
         Slack API data to open a new modal dialog
     """
+
     data = decode_slack_args(data)
 
     if callback_id == CLOCK_CALLBACK:
         dialog = slack_ui.get_clock_ui()
+    elif callback_id == WORKED_TIME_CALLBACK:
+        dialog = slack_ui.get_user_worked_time_ui()
     elif callback_id == CLOCK_HISTORY_CALLBACK:
         dialog = slack_ui.get_user_history_ui()
     elif callback_id == ADD_USER_CALLBACK:
@@ -379,29 +393,18 @@ def process_clock_history_action(token, action):
 
     Returns
     ------
-    tuple: (int)(list)
+    tuple: (string)(list)
         (worked_hours)(history_data)
     int:
         codes.INVALID_HISTORY_ACTION if action is not supported
     """
 
-    tomorrow_datetime = f"{time_utils.get_next_day(time_utils.get_current_date())} 00:00:00"
-    today_datetime = f"{time_utils.get_current_date()} 00:00:00"
-    lower_limit_datetime = ''
+    time_range = action.replace('_hours', '').replace('_history', '')
 
-    if action == 'today_hours' or action == 'today_history':
-        lower_limit_datetime = today_datetime
-    elif action == 'week_hours' or action == 'week_history':
-        lower_limit_datetime = time_utils.subtract_days_to_datetime(today_datetime,
-                                                                    time_utils.get_week_day(today_datetime))
-    elif action == 'month_hours' or action == 'month_history':
-        lower_limit_datetime = time_utils.subtract_days_to_datetime(today_datetime,
-                                                                    time_utils.get_month_day(today_datetime))
-    else:
-        return codes.INVALID_HISTORY_ACTION
+    data = intratime.get_clock_data_in_time_range(token, time_range)
 
-    data = intratime.get_parsed_clock_data(token, lower_limit_datetime, tomorrow_datetime)
     data.reverse()  # It is necessary to reverse the list to check and calculate the history hours
+
     worked_hours = intratime.get_worked_time(data)
 
     if 'hours' in action:
@@ -450,24 +453,26 @@ def process_interactive_data(data):
 
         post_ephemeral_response_message(clock_message, data['response_url'], 'blocks')
 
-    elif data['callback_id'] == CLOCK_HISTORY_CALLBACK:
+    elif data['callback_id'] == WORKED_TIME_CALLBACK or data['callback_id'] == CLOCK_HISTORY_CALLBACK:
         user_data = user.get_user_data(data['user']['id'])
-        user_query_action = data['submission']['history_action']
-
+        user_query_action = data['submission']['action']
         token = intratime.get_auth_token(user_data['intratime_mail'], crypt.decrypt(user_data['password']))
-        time_worked, history = process_clock_history_action(token, user_query_action)
+        worked_time, history = process_clock_history_action(token, user_query_action)
 
-        if len(history) == 0:
-            custom_message = {
-                'today_hours': 'on today',
-                'week_hours': 'on this week',
-                'month_hours': 'on this month'
-            }
+        custom_message = {
+            'today_hours': 'on today',
+            'week_hours': 'on this week',
+            'month_hours': 'on this month'
+        }
 
-            post_ephemeral_response_message(messages.set_custom_message('TIME_WORKED',
-                                                                        [custom_message[user_query_action],
-                                                                         time_worked]),
-                                                                        data['response_url'])
+        if data['callback_id'] == WORKED_TIME_CALLBACK:
+            message = messages.set_custom_message('WORKED_TIME', [custom_message[user_query_action], worked_time])
+            post_ephemeral_response_message(message, data['response_url'])
+        else:
+            message_blocks = messages.generate_slack_history_report(token, user_query_action, history)
+
+            for block in message_blocks:
+                post_private_message(block, data['user']['id'], mgs_type='blocks', as_bot_user=True)
 
     elif data['callback_id'] == ADD_USER_CALLBACK:
         cyphered_password = crypt.encrypt(data['submission']['password'])

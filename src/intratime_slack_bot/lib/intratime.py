@@ -9,8 +9,6 @@ from http import HTTPStatus
 from intratime_slack_bot.lib import logger, codes, messages, time_utils
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
-from intratime_slack_bot.lib.time_utils import SECONDS
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -411,6 +409,41 @@ def get_parsed_clock_data(token, datetime_from, datetime_to):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def get_clock_data_in_time_range(token, time_range):
+    """
+    Function to get clock data parsed for a time range
+
+    Parameters
+    ----------
+    token: str
+        Intratime authentication token
+    time_range: str
+        String enum: today, week or month
+
+    Returns
+    -------
+    list:
+        List with parsed data in the specific time range.
+    """
+
+    lower_limit_datetime = ''
+
+    if time_range == 'today':
+        lower_limit_datetime = f"{time_utils.get_current_date()} 00:00:00"
+    elif time_range == 'week':
+        lower_limit_datetime = time_utils.get_first_week_day()
+    elif time_range == 'month':
+        lower_limit_datetime = time_utils.get_first_month_day()
+    else:
+        return codes.INVALID_HISTORY_ACTION
+
+    data = get_parsed_clock_data(token, lower_limit_datetime, time_utils.get_current_date_time())
+
+    return data
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def get_worked_time(data):
     """
     Function to get the worked time in a specified range time
@@ -450,13 +483,17 @@ def get_worked_time(data):
         datetimes[item['action']] = item['datetime']
 
         if item['action'] == PAUSE_ACTION and before_action == IN_ACTION:
-            num_seconds += time_utils.get_time_difference(datetimes[IN_ACTION], datetimes[PAUSE_ACTION], SECONDS)
+            num_seconds += time_utils.get_time_difference(datetimes[IN_ACTION], datetimes[PAUSE_ACTION],
+                                                          time_utils.SECONDS)
         elif item['action'] == OUT_ACTION and before_action == IN_ACTION:
-            num_seconds += time_utils.get_time_difference(datetimes[IN_ACTION], datetimes[OUT_ACTION], SECONDS)
+            num_seconds += time_utils.get_time_difference(datetimes[IN_ACTION], datetimes[OUT_ACTION],
+                                                          time_utils.SECONDS)
         elif item['action'] == OUT_ACTION and before_action == RETURN_ACTION:
-            num_seconds += time_utils.get_time_difference(datetimes[RETURN_ACTION], datetimes[OUT_ACTION], SECONDS)
+            num_seconds += time_utils.get_time_difference(datetimes[RETURN_ACTION], datetimes[OUT_ACTION],
+                                                          time_utils.SECONDS)
         elif item['action'] == PAUSE_ACTION and before_action == RETURN_ACTION:
-            num_seconds += time_utils.get_time_difference(datetimes[RETURN_ACTION], datetimes[PAUSE_ACTION], SECONDS)
+            num_seconds += time_utils.get_time_difference(datetimes[RETURN_ACTION], datetimes[PAUSE_ACTION],
+                                                          time_utils.SECONDS)
 
         before_action = item['action']
 
