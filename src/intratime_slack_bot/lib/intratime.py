@@ -477,9 +477,6 @@ def get_worked_time(data):
     }
 
     for item in data:
-        if before_action in invalid_actions[item['action']]:
-            return codes.INVALID_CLOCK_HISTORY
-
         datetimes[item['action']] = item['datetime']
 
         if item['action'] == PAUSE_ACTION and before_action == IN_ACTION:

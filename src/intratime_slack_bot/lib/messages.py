@@ -304,7 +304,7 @@ def write_slack_history_register(data):
         },
         "accessory": {
             "type": "image",
-            "image_url": f"{IMAGE_BASE_URL}{data['action']}_4.png",
+            "image_url": f"{IMAGE_BASE_URL}{data['action']}_5.png",
             "alt_text": "Clocking action image"
         }
     }

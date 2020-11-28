@@ -3,14 +3,13 @@ import json
 import os
 import re
 
-from intratime_slack_bot.lib import logger
-from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log_exist, UNIT_TEST_DATA_PATH, TEST_FILE
+from intratime_slack_bot.lib import logger, test_utils
+from intratime_slack_bot.lib.test_utils import check_if_log_exist, TEST_FILE
 
 # ----------------------------------------------------------------------------------------------------------------------
+TEST_MODULE_NAME = 'logger'
 
-
-test_log_data = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'logger',
-                                                               'test_log.json'))]
+TEST_LOG_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_log.json')
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -23,7 +22,7 @@ def remove_file(request):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('level, message_id, custom_message, output', test_log_data)
+@pytest.mark.parametrize('level, message_id, custom_message, output', TEST_LOG_DATA)
 def test_log(level, message_id, custom_message, output, remove_file):
     logger.log(TEST_FILE, level, message_id, custom_message)
 

@@ -2,19 +2,18 @@ import pytest
 import os
 import freezegun
 
-from intratime_slack_bot.lib import messages
-from intratime_slack_bot.lib.test_utils import read_json_file_data, UNIT_TEST_DATA_PATH
+from intratime_slack_bot.lib import messages, test_utils
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+TEST_MODULE_NAME = 'messages'
 
-TEST_MAKE_MESSAGE_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'messages',
-                          'test_make_message.json'))]
-TEST_SET_CUSTOM_MESSAGE_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
-                                'messages', 'test_set_custom_message.json'))]
-TEST_GENERATE_SLACK_HISTORY_REPORT_DATA = \
-    [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'messages',
-                                                                'test_generate_slack_history_report.json'))]
+TEST_MAKE_MESSAGE_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_make_message.json')
+
+TEST_SET_CUSTOM_MESSAGE_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_set_custom_message.json')
+
+TEST_GENERATE_SLACK_HISTORY_REPORT_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME,
+                                                                             'test_generate_slack_history_report.json')
 
 # ----------------------------------------------------------------------------------------------------------------------
 

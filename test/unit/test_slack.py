@@ -7,37 +7,31 @@ import freezegun
 
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
-from intratime_slack_bot.lib import slack, codes, messages, logger, intratime, time_utils
-from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log_exist, TEST_FILE, UNIT_TEST_DATA_PATH
+from intratime_slack_bot.lib import slack, codes, messages, logger, intratime, time_utils, test_utils
+from intratime_slack_bot.lib.test_utils import check_if_log_exist, read_json_file_data, UNIT_TEST_DATA_PATH, TEST_FILE
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 SLACK_CHANNEL = settings.SLACK_TEST_CHANNEL
 TEXT = 'Test message'
 TEXT_BLOCK = [{'type': 'section', 'text': {'type': 'mrkdwn', 'text': 'test'}}]
 TEXT_ATTACHEMENT = [{"text": "Test message 2"}]
 TEST_USER_ID = settings.SLACK_TEST_USER_ID
+TEST_MODULE_NAME = 'slack'
+SLACK_TEST_DATA_PATH = os.path.join(UNIT_TEST_DATA_PATH, TEST_MODULE_NAME)
 
-SLACK_TEST_DATA_PATH = os.path.join(UNIT_TEST_DATA_PATH, 'slack')
+TEST_DECODE_SLACK_ARGS_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_decode_slack_args.json')
 
-TEST_DECODE_SLACK_ARGS_DATA = [item.values() for item in read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
-                                                                                          'test_decode_slack_args.json')
-                                                                             )]
-
-TEST_GET_API_DATA = [item.values() for item in read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
-                                                                                'test_get_api_data.json'))]
+TEST_GET_API_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_get_api_data.json')
 
 TEST_GET_API_NAMES = [item['callback_id'] for item in read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
                                                                                        'test_get_api_data.json'))]
 
-TEST_GENERATE_CLOCK_MESSAGE_DATA = [item.values() for item in
-                                    read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
-                                                                     'test_generate_clock_message.json'))]
+TEST_GENERATE_CLOCK_MESSAGE_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME,
+                                                                      'test_generate_clock_message.json')
 
-TEST_PROCESS_CLOCK_HISTORY_ACTION_DATA = [item.values() for item in
-                                          read_json_file_data(os.path.join(SLACK_TEST_DATA_PATH,
-                                                                           'test_process_clock_history_action.json'))]
+TEST_PROCESS_CLOCK_HISTORY_ACTION_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME,
+                                                                            'test_process_clock_history_action.json')
 
 interactive_test_data = {'type': 'dialog_submission', 'token': 'test', 'action_ts': 'test', 'team': {'id': 'test',
                          'domain': 'test'}, 'user': {'id': 'test', 'name': 'test'}, 'channel': {'id': 'test',

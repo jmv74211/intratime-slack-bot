@@ -4,27 +4,28 @@ import freezegun
 
 from datetime import datetime, timedelta
 from intratime_slack_bot.config.settings import INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD
-from intratime_slack_bot.lib import intratime, messages, logger, codes, time_utils
-from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log_exist, UNIT_TEST_DATA_PATH, TEST_FILE
+from intratime_slack_bot.lib import intratime, messages, logger, codes, time_utils, test_utils
+from intratime_slack_bot.lib.test_utils import check_if_log_exist, read_json_file_data, TEST_FILE, UNIT_TEST_DATA_PATH
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+TEST_MODULE_NAME = 'intratime'
+TEST_CLOCK_ACTIONS_PATH = os.path.join(UNIT_TEST_DATA_PATH, TEST_MODULE_NAME, 'test_clocking_actions.json')
 
-TEST_GET_ACTION_ID_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'intratime',
-                           'test_get_action_id.json'))]
-TEST_GET_ACTION_NAME_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
-                             'intratime', 'test_get_action_name.json'))]
-TEST_CLOCKING_ACTIONS_DATA = [item['action'] for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
-                              'intratime', 'test_clocking_actions.json'))]
-TEST_GET_USER_CLOCKS_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
-                             'intratime', 'test_get_user_clocks.json'))]
-TEST_GET_PARSED_CLOCK_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
-                              'intratime', 'test_get_parsed_clock_data.json'))]
-TEST_GET_WORKED_TIME_DATA = [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH,
-                             'intratime', 'test_get_worked_time.json'))]
-TEST_GET_CLOCK_DATA_IN_TIME_RANGE_DATA = \
-    [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, 'intratime',
-                                                                'test_get_clock_data_in_time_range.json'))]
+TEST_GET_ACTION_ID_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_get_action_id.json')
+
+TEST_GET_ACTION_NAME_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_get_action_name.json')
+
+TEST_CLOCKING_ACTIONS_DATA = [item['action'] for item in read_json_file_data(os.path.join(TEST_CLOCK_ACTIONS_PATH))]
+
+TEST_GET_USER_CLOCKS_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_get_user_clocks.json')
+
+TEST_GET_PARSED_CLOCK_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_get_parsed_clock_data.json')
+
+TEST_GET_WORKED_TIME_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_get_worked_time.json')
+
+TEST_GET_CLOCK_DATA_IN_TIME_RANGE_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME,
+                                                                            'test_get_clock_data_in_time_range.json')
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -141,7 +142,7 @@ def test_user_can_clock_in_action(token, pre_clock_in, post_clock_out):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def test_user_can_clock_pause_action(token, pre_clock_in, pre_clock_pause, post_clock_out):
+def test_user_can_clock_pause_action(token, pre_clock_in, pre_clock_pause, post_clock_return, post_clock_out):
     def message(action): return f"Your last clock action was `PAUSE`, so you can not clock `{action.upper()}` " \
                                  "action. Available actions: `['RETURN']`"
 

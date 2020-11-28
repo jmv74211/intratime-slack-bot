@@ -103,7 +103,6 @@ def post_private_message(message, channel,  mgs_type='text', log_file=settings.S
     request = requests.post(f"{warehouse.SLACK_POST_MESSAGE_URL}?token={token}&channel={channel}&"
                             f"{mgs_type}={message}", headers=headers)
 
-    print(request.status_code)
     if request.status_code != HTTPStatus.OK:
         if request.status_code != HTTPStatus.UNAUTHORIZED:
             logger.log(file=log_file, level=logger.ERROR, message_id=3014)
@@ -365,7 +364,7 @@ def generate_clock_message(data):
             },
             "accessory": {
                 "type": "image",
-                "image_url": f"{IMAGE_BASE_URL}{data['action']}_4.png",
+                "image_url": f"{IMAGE_BASE_URL}{data['action']}_5.png",
                 "alt_text": "Clocking action image"
             }
         },

@@ -87,3 +87,23 @@ def check_if_log_exist(string_to_match, log_file, log_level=None):
         return True
     else:
         return False
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def load_template_test_data(module, test_file):
+    """
+    Function to read and get test data from a template file
+
+    Parameters
+    ----------
+    module: str
+        Test module name. e.g slack, intratime...
+    test_file: str
+        Template file name
+
+    Returns
+    -------
+        (List): Test data formated to use it as parametrized test
+    """
+    return [item.values() for item in read_json_file_data(os.path.join(UNIT_TEST_DATA_PATH, module, test_file))]
