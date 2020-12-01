@@ -1,3 +1,8 @@
+from intratime_slack_bot.lib import slack
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def get_clock_ui():
     return {
         "title": "Intratime: Clocking",
@@ -113,11 +118,16 @@ def get_delete_user_ui():
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_user_history_ui():
+def get_user_history_ui(callback_id):
+    title_action = 'Clock'
+
+    if callback_id == slack.TIME_HISTORY_CALLBACK:
+        title_action = 'Time'
+
     return {
-        "title": "Intratime: Clock history",
+        "title": f"Intratime: {title_action} history",
         "submit_label": "Submit",
-        "callback_id": "user_clock_history",
+        "callback_id": callback_id,
         "elements": [
             {
                 "label": "Select the time range",

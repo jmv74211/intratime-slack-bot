@@ -49,7 +49,7 @@ def get_interactive_data():
     data = json.loads(data.replace('payload=', ''))
 
     if data['callback_id'] == slack.CLOCK_CALLBACK:
-        # Check if the user already exists
+        # Check if the user do not exist
         if not user.user_exist(data['user']['id']):
             return jsonify(slack.CLOCKING_USER_NOT_FOUND), HTTPStatus.OK
 
@@ -59,8 +59,8 @@ def get_interactive_data():
         if not intratime.check_user_credentials(user_data['intratime_mail'], crypt.decrypt(user_data['password'])):
             return jsonify(slack.BAD_BD_CREDENTIALS), HTTPStatus.OK
 
-    elif data['callback_id'] == slack.CLOCK_HISTORY_CALLBACK:
-        # Check if the user already exists
+    elif data['callback_id'] == slack.CLOCK_HISTORY_CALLBACK or data['callback_id'] == slack.TIME_HISTORY_CALLBACK:
+        # Check if the user do not exist
         if not user.user_exist(data['user']['id']):
             return jsonify(slack.CLOCKING_USER_NOT_FOUND), HTTPStatus.OK
 
@@ -111,7 +111,7 @@ def clock():
 
     data = request.get_data().decode('utf-8')
 
-    api_data = slack.get_api_data(data, 'clock')
+    api_data = slack.get_api_data(data, slack.CLOCK_CALLBACK)
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 
@@ -133,7 +133,7 @@ def sign_up():
 
     data = request.get_data().decode('utf-8')
 
-    api_data = slack.get_api_data(data, 'sign_up')
+    api_data = slack.get_api_data(data, slack.ADD_USER_CALLBACK)
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 
@@ -155,7 +155,7 @@ def update_user():
 
     data = request.get_data().decode('utf-8')
 
-    api_data = slack.get_api_data(data, 'update_user')
+    api_data = slack.get_api_data(data, slack.UPDATE_USER_CALLBACK)
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 
@@ -177,7 +177,7 @@ def delete_user():
 
     data = request.get_data().decode('utf-8')
 
-    api_data = slack.get_api_data(data, 'delete_user')
+    api_data = slack.get_api_data(data, slack.DELETE_USER_CALLBACK)
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 
@@ -186,7 +186,7 @@ def delete_user():
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@app.route(warehouse.HISTORY_REQUEST, methods=['POST'])
+@app.route(warehouse.CLOCK_HISTORY_REQUEST, methods=['POST'])
 def user_clock_history():
     """
     Description: Endpoint to get the user clock history
@@ -199,7 +199,29 @@ def user_clock_history():
 
     data = request.get_data().decode('utf-8')
 
-    api_data = slack.get_api_data(data, 'user_clock_history')
+    api_data = slack.get_api_data(data, slack.CLOCK_HISTORY_CALLBACK)
+
+    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
+
+    return make_response('', HTTPStatus.OK)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@app.route(warehouse.TIME_HISTORY_REQUEST, methods=['POST'])
+def user_worked_time_history():
+    """
+    Description: Endpoint to get the user worked time history
+
+    Input_data: b'token=x&team_id=x&team_domain=x&channel_id=x&channel_name=x&user_id=x&user_name=x&
+                  command=%2Fhistory&text=&api_app_id=x&response_url=x&trigger_id=x'
+
+    Output_data: {}, 200
+    """
+
+    data = request.get_data().decode('utf-8')
+
+    api_data = slack.get_api_data(data, slack.TIME_HISTORY_CALLBACK)
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 
@@ -221,7 +243,7 @@ def user_worked_time():
 
     data = request.get_data().decode('utf-8')
 
-    api_data = slack.get_api_data(data, 'user_worked_time')
+    api_data = slack.get_api_data(data, slack.WORKED_TIME_CALLBACK)
 
     requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
 

@@ -138,7 +138,7 @@ def date_included_in_range(datetime_from, datetime_to, date):
     Parameters
     ----------
     datetime_from: str
-        Upper limit datetime in format %Y-%m-%d %H:%M:%S
+        Lower limit datetime in format %Y-%m-%d %H:%M:%S
     datetime_to: str
         Upper limit datetime in format %Y-%m-%d %H:%M:%S
     date:str

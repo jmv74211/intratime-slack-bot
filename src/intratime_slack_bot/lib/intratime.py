@@ -446,7 +446,9 @@ def get_clock_data_in_time_range(token, time_range):
 
 def get_worked_time(data):
     """
-    Function to get the worked time in a specified range time
+    Function to get the worked time in a specified range time.
+
+    Important: The data has to be in increasing order (Most recent data at the end).
 
     Parameters
     ----------

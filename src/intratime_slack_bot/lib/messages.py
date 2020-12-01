@@ -1,4 +1,4 @@
-from intratime_slack_bot.lib import logger, time_utils
+from intratime_slack_bot.lib import logger, time_utils, intratime
 from intratime_slack_bot.config import settings
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -281,6 +281,31 @@ def write_slack_header(message):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def write_slack_message_too_long():
+    """
+    Function to write the warning message when the message size is too long.
+
+    Returns
+    -------
+    List:
+        Block message
+    """
+
+    return [
+        write_slack_divider(),
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f":warning: The message could not be displayed because it is too long :warning:"
+            }
+        },
+        write_slack_divider()
+    ]
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 def write_slack_history_register(data):
     """
     Function to model the clock register content
@@ -312,7 +337,7 @@ def write_slack_history_register(data):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def generate_slack_history_report(token, action, data):
+def generate_slack_history_report(token, action, data, worked_time, callback_id):
     """
     Function to build the slack history message
 
@@ -324,6 +349,8 @@ def generate_slack_history_report(token, action, data):
        String enum: today_history, week_history or month_history
     data: list
        List with clock history data
+    callback_id: str
+       Callback id from history report
 
     Returns
     -------
@@ -331,59 +358,82 @@ def generate_slack_history_report(token, action, data):
         List with message blocks to send to slack
     """
 
+    from intratime_slack_bot.lib import slack
+
     custom_message = {
         'today_history': {
-            'title': 'Today',
+            'title': 'TODAY',
             'from': f"{time_utils.get_current_date()} 00:00:00"
         },
         'week_history': {
-            'title': 'Week',
+            'title': 'WEEK',
             'from': f"{time_utils.get_first_week_day()}"
         },
         'month_history': {
-            'title': 'Month',
+            'title': 'MONTH',
             'from': f"{time_utils.get_first_month_day()}"
         }
     }
 
+    header_text = f"{'-'*27} *{custom_message[action]['title']} HISTORY* {'-'*27}\n\n :calendar: From" \
+                  f" _*{custom_message[action]['from']}*_ to _*{time_utils.get_current_date_time()}*_" \
+                  f" :calendar:\n\n:timer_clock: Worked time: _*{worked_time}*_ :timer_clock:"
+
     blocks = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*{custom_message[action]['title']}* history.\n From _*{custom_message[action]['from']}*_"
-                        f" to _*{time_utils.get_current_date_time()}*_"
-            }
-        }
+        write_slack_divider(),
+        write_slack_markdown(header_text),
+        write_slack_divider()
     ]
 
-    data.reverse()
     block_list = []
 
-    if len(data) > 0:
-        item_counter = 0
-        day = ''
+    if callback_id == slack.CLOCK_HISTORY_CALLBACK:
+        data.reverse()
 
-        while item_counter < len(data):
-            if time_utils.get_day(data[item_counter]['datetime']) == day:
-                blocks.append(write_slack_history_register(data[item_counter]))
-                blocks.append(write_slack_divider())
-            else:
-                block_list.append(blocks)
-                blocks = []
-                day = time_utils.get_day(data[item_counter]['datetime'])
-                date = time_utils.convert_datetime_string_to_date_string(data[item_counter]['datetime'])
+        if len(data) > 0:
+            item_counter = 0
+            day = ''
 
-                blocks.append(write_slack_header(f"{date}"))
-                blocks.append(write_slack_divider())
-                blocks.append(write_slack_history_register(data[item_counter]))
-                blocks.append(write_slack_divider())
+            while item_counter < len(data):
+                if time_utils.get_day(data[item_counter]['datetime']) == day:
+                    blocks.append(write_slack_history_register(data[item_counter]))
+                    blocks.append(write_slack_divider())
+                else:
+                    block_list.append(blocks)
+                    blocks = []
+                    day = time_utils.get_day(data[item_counter]['datetime'])
+                    date = time_utils.convert_datetime_string_to_date_string(data[item_counter]['datetime'])
 
-            item_counter += 1
-    else:
-        blocks.append(write_slack_markdown("No records available"))
+                    blocks.append(write_slack_header(f"{date}"))
+                    blocks.append(write_slack_divider())
+                    blocks.append(write_slack_history_register(data[item_counter]))
+                    blocks.append(write_slack_divider())
 
-    # Add last iteration block (while) or (else) blocks
-    block_list.append(blocks)
+                item_counter += 1
+        else:
+            blocks.append(write_slack_markdown("No records available"))
+
+        # Add last iteration block (while) or (else) blocks
+        block_list.append(blocks)
+
+    elif callback_id == slack.TIME_HISTORY_CALLBACK:
+        datetime_to = f"{time_utils.get_current_date()} 23:59:59"
+        block_list.append(blocks)
+
+        if action == 'today_history':
+            datetime_from = f"{time_utils.get_current_date()} 00:00:00"
+        elif action == 'week_history':
+            datetime_from = time_utils.get_first_week_day()
+        elif action == 'month_history':
+            datetime_from = time_utils.get_first_month_day()
+
+        filtered_data = slack.filter_clock_history_data(data, datetime_from, datetime_to)
+        worked_time_output = ''
+
+        for worked_day, item_data in filtered_data.items():
+            worked_time = intratime.get_worked_time(item_data)
+            worked_time_output += f"*• {worked_day}*: {worked_time}\n"
+
+        block_list.append([write_slack_markdown(worked_time_output)])
 
     return block_list

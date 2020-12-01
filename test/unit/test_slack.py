@@ -33,6 +33,9 @@ TEST_GENERATE_CLOCK_MESSAGE_DATA = test_utils.load_template_test_data(TEST_MODUL
 TEST_PROCESS_CLOCK_HISTORY_ACTION_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME,
                                                                             'test_process_clock_history_action.json')
 
+TEST_FILTER_CLOCK_HISTORY_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME,
+                                                                    'test_filter_clock_history_data.json')
+
 interactive_test_data = {'type': 'dialog_submission', 'token': 'test', 'action_ts': 'test', 'team': {'id': 'test',
                          'domain': 'test'}, 'user': {'id': 'test', 'name': 'test'}, 'channel': {'id': 'test',
                          'name': 'slack-bot-and-commands'}, 'submission': {'email': settings.INTRATIME_TEST_USER_EMAIL,
@@ -199,3 +202,10 @@ def test_process_delete_user_interactive_data(add_user, post_delete_user):
 def test_process_clock_history_action(action, worked_hours, fake_datetime, data, token):
     with freezegun.freeze_time(fake_datetime):
         assert slack.process_clock_history_action(token, action) == (worked_hours, data)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('data, datetime_from, datetime_to, expected_result', TEST_FILTER_CLOCK_HISTORY_DATA)
+def test_process_clock_history_action(data, datetime_from, datetime_to, expected_result):
+    assert slack.filter_clock_history_data(data, datetime_from, datetime_to) == expected_result

@@ -4,9 +4,9 @@ import json
 
 from http import HTTPStatus
 
-from intratime_slack_bot.lib import codes, warehouse, logger, slack_ui, messages, intratime, crypt, time_utils
-from intratime_slack_bot.lib.db import user
+from intratime_slack_bot.lib import codes, warehouse, logger, slack_ui, intratime, crypt, time_utils, messages
 from intratime_slack_bot.lib.messages import make_message
+from intratime_slack_bot.lib.db import user
 from intratime_slack_bot.config import settings
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -17,6 +17,7 @@ UPDATE_USER_CALLBACK = 'update_user'
 DELETE_USER_CALLBACK = 'delete_user'
 CLOCK_CALLBACK = 'clock'
 CLOCK_HISTORY_CALLBACK = 'user_clock_history'
+TIME_HISTORY_CALLBACK = 'user_time_history'
 WORKED_TIME_CALLBACK = 'user_worked_time'
 
 # UI ERRORS
@@ -104,7 +105,11 @@ def post_private_message(message, channel,  mgs_type='text', log_file=settings.S
                             f"{mgs_type}={message}", headers=headers)
 
     if request.status_code != HTTPStatus.OK:
-        if request.status_code != HTTPStatus.UNAUTHORIZED:
+        if(request.status_code == HTTPStatus.REQUEST_URI_TOO_LONG):
+            post_private_message(messages.write_slack_message_too_long(), channel, mgs_type='blocks', token=token,
+                                 as_bot_user=True)
+            return codes.MESSAGE_TOO_LONG
+        elif request.status_code != HTTPStatus.UNAUTHORIZED:
             logger.log(file=log_file, level=logger.ERROR, message_id=3014)
             return codes.BAD_SLACK_API_AUTH_CREDENTIALS
         elif request.status_code != HTTPStatus.BAD_REQUEST:
@@ -298,15 +303,14 @@ def get_api_data(data, callback_id):
     dict:
         Slack API data to open a new modal dialog
     """
-
     data = decode_slack_args(data)
 
     if callback_id == CLOCK_CALLBACK:
         dialog = slack_ui.get_clock_ui()
     elif callback_id == WORKED_TIME_CALLBACK:
         dialog = slack_ui.get_user_worked_time_ui()
-    elif callback_id == CLOCK_HISTORY_CALLBACK:
-        dialog = slack_ui.get_user_history_ui()
+    elif callback_id == CLOCK_HISTORY_CALLBACK or callback_id == TIME_HISTORY_CALLBACK:
+        dialog = slack_ui.get_user_history_ui(callback_id)
     elif callback_id == ADD_USER_CALLBACK:
         dialog = slack_ui.get_sign_up_ui()
     elif callback_id == UPDATE_USER_CALLBACK:
@@ -391,7 +395,7 @@ def process_clock_history_action(token, action):
         Callback action
 
     Returns
-    ------
+    -------
     tuple: (string)(list)
         (worked_hours)(history_data)
     int:
@@ -410,6 +414,43 @@ def process_clock_history_action(token, action):
         return (worked_hours, [])
 
     return (worked_hours, data)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def filter_clock_history_data(data, datetime_from, datetime_to):
+    """
+    Function to get the clock history data in a time range. e.g
+
+    { datetime_1: [item_1, item_2], datetime_2: [item_3, item_4, item_5] }
+
+    Parameters
+    ----------
+    data: dict
+        Parsed clock data
+    datetime_from: str
+        Lower limit datetime in format %Y-%m-%d %H:%M:%S
+    datetime_to: str
+        Upper limit datetime in format %Y-%m-%d %H:%M:%S
+
+    Returns
+    -------
+    dict:
+        Filtered clock history data dictionary.
+    """
+
+    filter_data = [item for item in data if time_utils.date_included_in_range(datetime_from, datetime_to,
+                   item['datetime'])]
+    group_data = {}
+
+    for item in filter_data:
+        date = time_utils.convert_datetime_string_to_date_string(item['datetime'])
+        if date in group_data:
+            group_data[date].append(item)
+        else:
+            group_data[date] = [item]
+
+    return group_data
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -452,7 +493,9 @@ def process_interactive_data(data):
 
         post_ephemeral_response_message(clock_message, data['response_url'], 'blocks')
 
-    elif data['callback_id'] == WORKED_TIME_CALLBACK or data['callback_id'] == CLOCK_HISTORY_CALLBACK:
+    elif (data['callback_id'] == WORKED_TIME_CALLBACK or data['callback_id'] == CLOCK_HISTORY_CALLBACK or
+          data['callback_id'] == TIME_HISTORY_CALLBACK):
+
         user_data = user.get_user_data(data['user']['id'])
         user_query_action = data['submission']['action']
         token = intratime.get_auth_token(user_data['intratime_mail'], crypt.decrypt(user_data['password']))
@@ -468,8 +511,8 @@ def process_interactive_data(data):
             message = messages.set_custom_message('WORKED_TIME', [custom_message[user_query_action], worked_time])
             post_ephemeral_response_message(message, data['response_url'])
         else:
-            message_blocks = messages.generate_slack_history_report(token, user_query_action, history)
-
+            message_blocks = messages.generate_slack_history_report(token, user_query_action, history,
+                                                                    worked_time, data['callback_id'])
             for block in message_blocks:
                 post_private_message(block, data['user']['id'], mgs_type='blocks', as_bot_user=True)
 
