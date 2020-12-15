@@ -48,7 +48,6 @@ def validate_message(message):
     boolean:
         True if message format is valid, False otherwise
     """
-
     if isinstance(message, str):
         return True
     elif isinstance(message, list) and len(message) > 0 and isinstance(message[0], dict):
@@ -123,8 +122,8 @@ def post_private_message(message, channel,  mgs_type='text', log_file=settings.S
                        custom_message=make_message(3017, f"Status code = {request.status_code}"))
             return codes.UNDEFINED_ERROR
 
-    if 'ok' in request.json() and request.json()['ok'] is False:
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.json()['error']}"))
+    if request.text != 'ok':
+        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.text}"))
         return codes.BAD_REQUEST_DATA
 
     return codes.SUCCESS
@@ -197,8 +196,8 @@ def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SE
                        custom_message=make_message(3017, f"Status code = {request.status_code}"))
             return codes.UNDEFINED_ERROR
 
-    if 'ok' in request.json() and request.json()['ok'] is False:
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.json()['error']}"))
+    if request.text != 'ok':
+        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.text}"))
         return codes.BAD_REQUEST_DATA
 
     return codes.SUCCESS
@@ -231,11 +230,9 @@ def post_ephemeral_response_message(message, response_url, mgs_type='text', log_
         codes.UNDEFINED_ERROR if the error is unknown
         codes.SUCCESS if the message has ben posted successfully
     """
-
     if not validate_message(message):
         logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3018, f"of message parameter"))
         return codes.INVALID_VALUE
-
     payload = {mgs_type: message, 'response_type': 'ephemeral'}
     headers = {'content-type': 'application/json'}
 
@@ -256,8 +253,8 @@ def post_ephemeral_response_message(message, response_url, mgs_type='text', log_
                        custom_message=make_message(3017, f"Status code = {request.status_code}"))
             return codes.UNDEFINED_ERROR
 
-    if 'ok' in request.json() and request.json()['ok'] is False:
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.json()['error']}"))
+    if request.text != 'ok':
+        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.text}"))
         return codes.BAD_REQUEST_DATA
 
     return codes.SUCCESS
@@ -498,6 +495,7 @@ def process_interactive_data(data):
 
         user_data = user.get_user_data(data['user']['id'])
         user_query_action = data['submission']['action']
+
         token = intratime.get_auth_token(user_data['intratime_mail'], crypt.decrypt(user_data['password']))
         worked_time, history = process_clock_history_action(token, user_query_action)
 

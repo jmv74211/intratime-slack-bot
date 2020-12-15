@@ -437,3 +437,48 @@ def generate_slack_history_report(token, action, data, worked_time, callback_id)
         block_list.append([write_slack_markdown(worked_time_output)])
 
     return block_list
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def slack_warning_message(message):
+    """
+    Function to build a warning message
+
+    Parameters
+    ----------
+    message: str
+        Message
+
+    Returns
+    -------
+    dict:
+        Block message
+    """
+
+    return write_slack_markdown(f":warning: {message} :warning:")
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def slack_command_help():
+    """
+    Function to build the command help message
+
+    Returns
+    -------
+    dict:
+        Block message
+    """
+
+    from intratime_slack_bot.services.slack_service import ALLOWED_COMMANDS
+
+    message = "Allowed commands and values:\n"
+
+    for command, data in ALLOWED_COMMANDS.items():
+        if len(data['allowed_parameters']) > 0:
+            message += f"- *{command}*: {', '.join(str(param) for param in data['allowed_parameters'])}\n"
+        else:
+            message += f"- *{command}*\n"
+
+    return write_slack_markdown(message)

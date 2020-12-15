@@ -5,12 +5,140 @@ import threading
 
 from flask import Flask, jsonify, request, make_response
 from http import HTTPStatus
+from functools import wraps
 
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
 from intratime_slack_bot.lib import messages, warehouse, slack, intratime, codes, crypt, slack_ui
 
 app = Flask(__name__)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+ALLOWED_COMMANDS = {
+    "/clock": {
+        "allowed_parameters": ['in', 'pause', 'return', 'out'],
+        "callback_id": slack.CLOCK_CALLBACK
+    },
+    "/clock_history": {
+        "allowed_parameters": ['today', 'week', 'month'],
+        "callback_id": slack.CLOCK_HISTORY_CALLBACK
+    },
+    "/time_history": {
+        "allowed_parameters": ['today', 'week', 'month'],
+        "callback_id": slack.TIME_HISTORY_CALLBACK
+    },
+    "/time": {
+        "allowed_parameters": ['today', 'week', 'month'],
+        "callback_id": slack.WORKED_TIME_CALLBACK
+    },
+    "/sign_up": {
+        "allowed_parameters": [],
+        "callback_id": slack.ADD_USER_CALLBACK
+    },
+    "/update_user": {
+        "allowed_parameters": [],
+        "callback_id": slack.UPDATE_USER_CALLBACK
+    },
+    "/delete_user": {
+        "allowed_parameters": [],
+        "callback_id": slack.DELETE_USER_CALLBACK
+    }
+}
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def empty_response():
+    return make_response('', HTTPStatus.OK)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def validate_user(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Convert from x=y&z=h to {x:y, z:h}
+        data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))
+
+        # Converts lists with size 1 into elements. e.g  x: ['test] --> x: 'test'
+        for key, value in data.items():
+            if type(value) is list and len(value) == 1:
+                data[key] = value[0]
+
+        if not user.user_exist(data['user_id']):
+            message = messages.slack_warning_message('You are not registered. Please sign up using `/sign_up` command')
+            slack.post_ephemeral_response_message([message], data['response_url'], 'blocks')
+            return empty_response()
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def process_request(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # DECODE SLACK DATA
+        data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))  # Convert from x=y&z=h to {x:y, z:h}
+
+        # Converts lists with size 1 into elements. e.g  x: ['test] --> x: 'test'
+        for key, value in data.items():
+            if type(value) is list and len(value) == 1:
+                data[key] = value[0]
+
+        parameters = [data['command']]
+
+        # Get command parameters
+        if 'text' in data:
+            parameters.extend(data['text'].split(' '))
+
+        command = parameters[0]
+
+        if command not in ALLOWED_COMMANDS:
+            print(f"Command {command} not exists")
+            return empty_response()
+
+        callback_id = ALLOWED_COMMANDS[command]['callback_id']
+
+        # If there is no command parameters
+        if len(parameters) == 1:
+            data = request.get_data().decode('utf-8')
+            api_data = slack.get_api_data(data, callback_id)
+
+            requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
+
+            return empty_response()
+
+        command_parameter = parameters[1]
+
+        if command_parameter not in ALLOWED_COMMANDS[command]['allowed_parameters']:
+            message = messages.slack_warning_message(f"Bad parameter _{command_parameter}_ in `{command}` command")
+            slack.post_ephemeral_response_message([message], data['response_url'], 'blocks')
+            slack.post_ephemeral_response_message([messages.slack_command_help()], data['response_url'], 'blocks')
+            return empty_response()
+
+        # COMMAND WITH PARAMETERS SECTION
+        if command == '/time':
+            command_parameter += '_hours'
+        elif command == '/time_history' or command == '/clock_history':
+            command_parameter += '_history'
+
+        data['callback_id'] = callback_id
+        data['submission'] = {'action': command_parameter}
+        data['user'] = {'id': data['user_id']}
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        url = f"{settings.PROTOCOL}://localhost:{settings.SLACK_SERVICE_PORT}{warehouse.INTERACTIVE_REQUEST}"
+        data = urllib.parse.urlencode({'payload': data})
+
+        requests.post(url, data=data, headers=headers)
+
+        return empty_response()
+
+    return wrapper
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -42,11 +170,7 @@ def get_interactive_data():
 
     Output_data: {}, 200
     """
-
-    data = urllib.parse.unquote(request.get_data().decode('utf-8'))
-
-    # Clean string to convert it to json format
-    data = json.loads(data.replace('payload=', ''))
+    data = json.loads(urllib.parse.parse_qs(request.get_data().decode('utf-8'))['payload'][0].replace('\'', '"'))
 
     if data['callback_id'] == slack.CLOCK_CALLBACK:
         # Check if the user do not exist
@@ -99,6 +223,8 @@ def get_interactive_data():
 
 
 @app.route(warehouse.CLOCK_REQUEST, methods=['POST'])
+@validate_user
+@process_request
 def clock():
     """
     Description: Endpoint to clock a user action
@@ -109,18 +235,11 @@ def clock():
     Output_data: {}, 200
     """
 
-    data = request.get_data().decode('utf-8')
-
-    api_data = slack.get_api_data(data, slack.CLOCK_CALLBACK)
-
-    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
-
-    return make_response('', HTTPStatus.OK)
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.ADD_USER_REQUEST, methods=['POST'])
+@process_request
 def sign_up():
     """
     Description: Endpoint register a new user
@@ -131,18 +250,12 @@ def sign_up():
     Output_data: {}, 200
     """
 
-    data = request.get_data().decode('utf-8')
-
-    api_data = slack.get_api_data(data, slack.ADD_USER_CALLBACK)
-
-    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
-
-    return make_response('', HTTPStatus.OK)
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.UPDATE_USER_REQUEST, methods=['POST'])
+@validate_user
+@process_request
 def update_user():
     """
     Description: Endpoint to update the user info
@@ -153,18 +266,12 @@ def update_user():
     Output_data: {}, 200
     """
 
-    data = request.get_data().decode('utf-8')
-
-    api_data = slack.get_api_data(data, slack.UPDATE_USER_CALLBACK)
-
-    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
-
-    return make_response('', HTTPStatus.OK)
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.DELETE_USER_REQUEST, methods=['POST'])
+@validate_user
+@process_request
 def delete_user():
     """
     Description: Endpoint to delete an user from app
@@ -175,18 +282,12 @@ def delete_user():
     Output_data: {}, 200
     """
 
-    data = request.get_data().decode('utf-8')
-
-    api_data = slack.get_api_data(data, slack.DELETE_USER_CALLBACK)
-
-    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
-
-    return make_response('', HTTPStatus.OK)
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.CLOCK_HISTORY_REQUEST, methods=['POST'])
+@validate_user
+@process_request
 def user_clock_history():
     """
     Description: Endpoint to get the user clock history
@@ -197,18 +298,12 @@ def user_clock_history():
     Output_data: {}, 200
     """
 
-    data = request.get_data().decode('utf-8')
-
-    api_data = slack.get_api_data(data, slack.CLOCK_HISTORY_CALLBACK)
-
-    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
-
-    return make_response('', HTTPStatus.OK)
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.TIME_HISTORY_REQUEST, methods=['POST'])
+@validate_user
+@process_request
 def user_worked_time_history():
     """
     Description: Endpoint to get the user worked time history
@@ -219,19 +314,13 @@ def user_worked_time_history():
     Output_data: {}, 200
     """
 
-    data = request.get_data().decode('utf-8')
-
-    api_data = slack.get_api_data(data, slack.TIME_HISTORY_CALLBACK)
-
-    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
-
-    return make_response('', HTTPStatus.OK)
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.WORKED_TIME_REQUEST, methods=['POST'])
-def user_worked_time():
+@validate_user
+@process_request
+def user_worked_time(parameters, command_has_parameters):
     """
     Description: Endpoint to get the user worked time
 
@@ -240,14 +329,6 @@ def user_worked_time():
 
     Output_data: {}, 200
     """
-
-    data = request.get_data().decode('utf-8')
-
-    api_data = slack.get_api_data(data, slack.WORKED_TIME_CALLBACK)
-
-    requests.post(warehouse.SLACK_OPEN_DIALOG_URL, data=api_data)
-
-    return make_response('', HTTPStatus.OK)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
