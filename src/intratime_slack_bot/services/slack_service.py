@@ -43,6 +43,14 @@ ALLOWED_COMMANDS = {
     "/delete_user": {
         "allowed_parameters": [],
         "callback_id": slack.DELETE_USER_CALLBACK
+    },
+    "/today": {
+        "allowed_parameters": [],
+        "callback_id": slack.TODAY_INFO_CALLBACK
+    },
+    "/help": {
+        "allowed_parameters": [],
+        "callback_id": slack.COMMAND_HELP_CALLBACK
     }
 }
 
@@ -101,9 +109,14 @@ def process_request(func):
             print(f"Command {command} not exists")
             return empty_response()
 
+        # Exception for today command (wrapper for /clock history today)
+        if command == '/today':
+            command = '/clock_history'
+            parameters.append('today')
+
         callback_id = ALLOWED_COMMANDS[command]['callback_id']
 
-        # If there is no command parameters
+        # If there is no command parameters and command has user interface
         if len(parameters) == 1:
             data = request.get_data().decode('utf-8')
             api_data = slack.get_api_data(data, callback_id)
@@ -320,7 +333,7 @@ def user_worked_time_history():
 @app.route(warehouse.WORKED_TIME_REQUEST, methods=['POST'])
 @validate_user
 @process_request
-def user_worked_time(parameters, command_has_parameters):
+def user_worked_time():
     """
     Description: Endpoint to get the user worked time
 
@@ -329,6 +342,40 @@ def user_worked_time(parameters, command_has_parameters):
 
     Output_data: {}, 200
     """
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@app.route(warehouse.TODAY_INFO_REQUEST, methods=['POST'])
+@validate_user
+@process_request
+def user_today_info():
+    """
+    Description: Endpoint to get the clock history from today
+
+    Input_data: b'token=x&team_id=x&team_domain=x&channel_id=x&channel_name=x&user_id=x&user_name=x&
+                  command=%2Ftoday&text=&api_app_id=x&response_url=x&trigger_id=x'
+
+    Output_data: {}, 200
+    """
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@app.route(warehouse.COMMAND_HELP_REQUEST, methods=['POST'])
+def command_help():
+    """
+    Description: Endpoint to get the command help
+
+    Input_data: b'token=x&team_id=x&team_domain=x&channel_id=x&channel_name=x&user_id=x&user_name=x&
+                  command=%2Fhelp&text=&api_app_id=x&response_url=x&trigger_id=x'
+
+    Output_data: {}, 200
+    """
+    data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))
+    slack.post_ephemeral_response_message([messages.slack_command_help()], data['response_url'][0], 'blocks')
+
+    return empty_response()
 
 # ----------------------------------------------------------------------------------------------------------------------
 

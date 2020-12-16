@@ -19,6 +19,9 @@ CLOCK_CALLBACK = 'clock'
 CLOCK_HISTORY_CALLBACK = 'user_clock_history'
 TIME_HISTORY_CALLBACK = 'user_time_history'
 WORKED_TIME_CALLBACK = 'user_worked_time'
+TODAY_INFO_CALLBACK = 'today_info'
+COMMAND_HELP_CALLBACK = 'command_help'
+
 
 # UI ERRORS
 USER_ALREADY_REGISTERED_MESSAGE = {'errors': [{'name': 'email', 'error': messages.USER_ALREADY_REGISTERED}]}
@@ -490,6 +493,9 @@ def process_interactive_data(data):
 
         post_ephemeral_response_message(clock_message, data['response_url'], 'blocks')
 
+    elif data['callback_id'] == TODAY_INFO_CALLBACK:
+        print("TODAY INFO")
+
     elif (data['callback_id'] == WORKED_TIME_CALLBACK or data['callback_id'] == CLOCK_HISTORY_CALLBACK or
           data['callback_id'] == TIME_HISTORY_CALLBACK):
 
@@ -554,3 +560,6 @@ def process_interactive_data(data):
                                             data['response_url'])
 
         post_ephemeral_response_message(messages.DELETE_USER_SUCCESS, data['response_url'])
+
+    elif data['callback_id'] == COMMAND_HELP_CALLBACK:
+        print("COMMAND HELP")
