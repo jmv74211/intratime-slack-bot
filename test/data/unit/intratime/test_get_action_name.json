@@ -14,5 +14,9 @@
     {
         "action": 3,
         "output": "return"
+    },
+    {
+        "action": 20,
+        "output": null
     }
 ]

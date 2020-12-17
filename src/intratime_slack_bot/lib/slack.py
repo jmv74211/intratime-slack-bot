@@ -4,8 +4,8 @@ import json
 
 from http import HTTPStatus
 
-from intratime_slack_bot.lib import codes, warehouse, logger, slack_ui, intratime, crypt, time_utils, messages
-from intratime_slack_bot.lib.messages import make_message
+from intratime_slack_bot.lib.db import monitoring
+from intratime_slack_bot.lib import codes, warehouse, slack_ui, intratime, crypt, time_utils, messages, logger
 from intratime_slack_bot.lib.db import user
 from intratime_slack_bot.config import settings
 
@@ -34,6 +34,8 @@ UPDATE_USER_NOT_FOUND = {'errors': [{'name': 'email', 'error': messages.USER_NOT
 CLOCKING_USER_NOT_FOUND = {'errors': [{'name': 'action', 'error': messages.USER_NOT_FOUND}]}
 CLOCKING_BAD_USER_CREDENTIALS = {'errors': [{'name': 'action', 'error': messages.USER_NOT_FOUND}]}
 
+LOGGER = logger.get_logger('slack', settings.LOGS_LEVEL)
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -56,13 +58,14 @@ def validate_message(message):
     elif isinstance(message, list) and len(message) > 0 and isinstance(message[0], dict):
         return True
 
+    LOGGER.error(messages.get(3022, message))
+
     return False
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def post_private_message(message, channel,  mgs_type='text', log_file=settings.SLACK_SERVICE_LOG_FILE,
-                         token=settings.SLACK_API_USER_TOKEN, as_bot_user=False):
+def post_private_message(message, channel,  mgs_type='text', token=settings.SLACK_API_USER_TOKEN, as_bot_user=False):
     """
     Function to post a private message in a slack channel
 
@@ -74,8 +77,6 @@ def post_private_message(message, channel,  mgs_type='text', log_file=settings.S
         Channel ID
     mgs_type: str
         enum: 'text', 'attachments' or 'blocks' depending on message type
-    log_file: str
-        Log file when the action will be logged in case of failure or success
     token: str
         Slack API user token
     as_bot_user: boolean
@@ -93,7 +94,6 @@ def post_private_message(message, channel,  mgs_type='text', log_file=settings.S
     """
 
     if not validate_message(message):
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3018, f"of message parameter"))
         return codes.INVALID_VALUE
 
     time.sleep(1)  # Wait one second to send the API request due to rate limit (1/sec)
@@ -107,35 +107,34 @@ def post_private_message(message, channel,  mgs_type='text', log_file=settings.S
                             f"{mgs_type}={message}", headers=headers)
 
     if request.status_code != HTTPStatus.OK:
+        LOGGER.error(messages.get(3023, f"Status code = {request.status_code}"))
         if(request.status_code == HTTPStatus.REQUEST_URI_TOO_LONG):
+            LOGGER.warning(messages.get(2003))
             post_private_message(messages.write_slack_message_too_long(), channel, mgs_type='blocks', token=token,
                                  as_bot_user=True)
             return codes.MESSAGE_TOO_LONG
-        elif request.status_code != HTTPStatus.UNAUTHORIZED:
-            logger.log(file=log_file, level=logger.ERROR, message_id=3014)
+        elif request.status_code == HTTPStatus.UNAUTHORIZED:
             return codes.BAD_SLACK_API_AUTH_CREDENTIALS
-        elif request.status_code != HTTPStatus.BAD_REQUEST:
-            logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"Payload = {payload}"))
+        elif request.status_code == HTTPStatus.BAD_REQUEST:
             return codes.BAD_REQUEST_DATA
-        elif request.status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
-            logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3016, f"when posting a message"))
+        elif request.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
             return codes.INTERNAL_SERVER_ERROR
         else:
-            logger.log(file=log_file, level=logger.ERROR,
-                       custom_message=make_message(3017, f"Status code = {request.status_code}"))
             return codes.UNDEFINED_ERROR
 
-    if request.text != 'ok':
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.text}"))
-        return codes.BAD_REQUEST_DATA
+    try:
+        if not json.loads(request.text)['ok']:
+            LOGGER.error(messages.get(3015, f"Request text code = {request.text}"))
+            return codes.BAD_REQUEST_DATA
+    except KeyError as exception:
+        LOGGER.error(messages.get(3027))
 
     return codes.SUCCESS
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SERVICE_LOG_FILE,
-                           token=settings.SLACK_API_USER_TOKEN, as_bot_user=False):
+def post_ephemeral_message(message, channel, user_id, token=settings.SLACK_API_USER_TOKEN, as_bot_user=False):
     """
     Function to post a ephemeral message in a slack channel
 
@@ -147,8 +146,6 @@ def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SE
         Channel ID
     user_id: str
         Destination user_id
-    log_file: str
-        Log file when the action will be logged in case of failure or success
     token: str
         Slack API user token
     as_bot_user: boolean
@@ -166,7 +163,6 @@ def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SE
     """
 
     if not validate_message(message):
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3018, f"of message parameter"))
         return codes.INVALID_VALUE
 
     time.sleep(1)  # Wait one second to send the API request due to rate limit (1/sec)
@@ -183,32 +179,30 @@ def post_ephemeral_message(message, channel, user_id, log_file=settings.SLACK_SE
 
     request = requests.post(f"{warehouse.SLACK_POST_EPHEMERAL_MESSAGE_URL}?token={token}&channel={channel}&"
                             f"{message_parameter}={message}&user={user_id}", headers=headers)
-
     if request.status_code != HTTPStatus.OK:
-        if request.status_code != HTTPStatus.UNAUTHORIZED:
-            logger.log(file=log_file, level=logger.ERROR, message_id=3014)
+        LOGGER.error(messages.get(3024, f"Status code = {request.status_code}"))
+        if request.status_code == HTTPStatus.UNAUTHORIZED:
             return codes.BAD_SLACK_API_AUTH_CREDENTIALS
-        elif request.status_code != HTTPStatus.BAD_REQUEST:
-            logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"Payload = {payload}"))
+        elif request.status_code == HTTPStatus.BAD_REQUEST:
             return codes.BAD_REQUEST_DATA
-        elif request.status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
-            logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3016, f"when posting a message"))
+        elif request.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
             return codes.INTERNAL_SERVER_ERROR
         else:
-            logger.log(file=log_file, level=logger.ERROR,
-                       custom_message=make_message(3017, f"Status code = {request.status_code}"))
             return codes.UNDEFINED_ERROR
 
-    if request.text != 'ok':
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.text}"))
-        return codes.BAD_REQUEST_DATA
+    try:
+        if not json.loads(request.text)['ok']:
+            LOGGER.error(messages.get(3015, f"Request text code = {request.text}"))
+            return codes.BAD_REQUEST_DATA
+    except KeyError as exception:
+        LOGGER.error(messages.get(3027))
 
     return codes.SUCCESS
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def post_ephemeral_response_message(message, response_url, mgs_type='text', log_file=settings.SLACK_SERVICE_LOG_FILE):
+def post_ephemeral_response_message(message, response_url, mgs_type='text'):
     """
     Function to post a ephemeral message in a slack channel given a response_url
 
@@ -220,8 +214,6 @@ def post_ephemeral_response_message(message, response_url, mgs_type='text', log_
         Response url from user conversation
     mgs_type: str
         enum: 'text', 'attachments' or 'blocks' depending on message type
-    log_file: str
-        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -233,31 +225,28 @@ def post_ephemeral_response_message(message, response_url, mgs_type='text', log_
         codes.UNDEFINED_ERROR if the error is unknown
         codes.SUCCESS if the message has ben posted successfully
     """
+
     if not validate_message(message):
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3018, f"of message parameter"))
         return codes.INVALID_VALUE
+
     payload = {mgs_type: message, 'response_type': 'ephemeral'}
     headers = {'content-type': 'application/json'}
 
     request = requests.post(response_url, json=payload, headers=headers)
 
     if request.status_code != HTTPStatus.OK:
-        if request.status_code != HTTPStatus.UNAUTHORIZED:
-            logger.log(file=log_file, level=logger.ERROR, message_id=3014)
+        LOGGER.error(messages.get(3025, f"Status code = {request.status_code}"))
+        if request.status_code == HTTPStatus.UNAUTHORIZED:
             return codes.BAD_SLACK_API_AUTH_CREDENTIALS
-        elif request.status_code != HTTPStatus.BAD_REQUEST:
-            logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"Payload = {payload}"))
+        elif request.status_code == HTTPStatus.BAD_REQUEST:
             return codes.BAD_REQUEST_DATA
-        elif request.status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
-            logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3016, f"when posting a message"))
+        elif request.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
             return codes.INTERNAL_SERVER_ERROR
         else:
-            logger.log(file=log_file, level=logger.ERROR,
-                       custom_message=make_message(3017, f"Status code = {request.status_code}"))
             return codes.UNDEFINED_ERROR
 
     if request.text != 'ok':
-        logger.log(file=log_file, level=logger.ERROR, custom_message=make_message(3015, f"{request.text}"))
+        LOGGER.error(messages.get(3015, f"Request text code = {request.text}"))
         return codes.BAD_REQUEST_DATA
 
     return codes.SUCCESS
@@ -318,6 +307,7 @@ def get_api_data(data, callback_id):
     elif callback_id == DELETE_USER_CALLBACK:
         dialog = slack_ui.get_delete_user_ui()
     else:
+        LOGGER.error(messages.get(3026, callback_id))
         return None
 
     api_data = {
@@ -347,12 +337,14 @@ def generate_clock_message(data):
     """
 
     if 'intratime_mail' not in data or 'datetime' not in data or 'action' not in data:
+        LOGGER.error(messages.get(3015))
         return codes.BAD_REQUEST_DATA
 
     IMAGE_BASE_URL = 'https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/'
 
     if data['action'] != intratime.IN_ACTION and data['action'] != intratime.PAUSE_ACTION and \
        data['action'] != intratime.RETURN_ACTION and data['action'] != intratime.OUT_ACTION:
+        LOGGER.error(messages.get(3018, data['action']))
         return codes.BAD_REQUEST_DATA
 
     block_message = [
@@ -492,6 +484,7 @@ def process_interactive_data(data):
                                                 'datetime': time_utils.get_current_date_time(),
                                                 'action': data['submission']['action']})
 
+        monitoring.clock_user_action(data['user']['id'], data['user']['name'], data['submission']['action'].upper())
         post_ephemeral_response_message(clock_message, data['response_url'], 'blocks')
 
     elif (data['callback_id'] == WORKED_TIME_CALLBACK or data['callback_id'] == CLOCK_HISTORY_CALLBACK or
@@ -522,7 +515,7 @@ def process_interactive_data(data):
         cyphered_password = crypt.encrypt(data['submission']['password'])
 
         # Create new user in user service
-        request_status = user.add_user({"user_id": data['user']['id'], "username": data['user']['name'],
+        request_status = user.add_user({"user_id": data['user']['id'], "user_name": data['user']['name'],
                                         "password": cyphered_password,
                                         "intratime_mail": data['submission']['email'],
                                         "registration_date": time_utils.get_current_date_time(),

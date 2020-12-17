@@ -2,19 +2,44 @@ import requests
 import json
 import urllib.parse
 import threading
+import logging
+import sys
+import os
 
 from flask import Flask, jsonify, request, make_response
 from http import HTTPStatus
 from functools import wraps
+from logging.handlers import TimedRotatingFileHandler
 
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
 from intratime_slack_bot.lib.db.monitoring import add_history_register
 from intratime_slack_bot.lib import messages, warehouse, slack, intratime, codes, crypt, slack_ui
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 app = Flask(__name__)
 
-# ----------------------------------------------------------------------------------------------------------------------
+
+# Configure log handlers
+logger = logging.getLogger('werkzeug')
+
+app_file_handler = TimedRotatingFileHandler(os.path.join(settings.LOGS_PATH, 'app.log'), when='midnight')
+error_file_handler = TimedRotatingFileHandler(os.path.join(settings.LOGS_PATH, 'app_error.log'), when='midnight')
+
+app_file_handler.setLevel(logging.DEBUG)
+error_file_handler.setLevel(logging.ERROR)
+
+# Logger needed to log flask logs
+logger.addHandler(app_file_handler)
+
+# Logger needed to log errors too in app log file (It works with debug false)
+app.logger.addHandler(app_file_handler)
+
+# Logger needed to log only errors in errors log file (It works with debug false)
+app.logger.addHandler(error_file_handler)
+
 
 ALLOWED_COMMANDS = {
     "/clock": {
@@ -97,7 +122,7 @@ def monitoring(func):
         except KeyError:
             pass
 
-        history_data = {'username': data['user_name'][0], 'user_id': data['user_id'][0], 'command': data['command'][0],
+        history_data = {'user_name': data['user_name'][0], 'user_id': data['user_id'][0], 'command': data['command'][0],
                         'parameters': parameters}
 
         add_history_register(history_data)
@@ -164,7 +189,7 @@ def process_request(func):
 
         data['callback_id'] = callback_id
         data['submission'] = {'action': command_parameter}
-        data['user'] = {'id': data['user_id']}
+        data['user'] = {'id': data['user_id'], 'name': data['user_name']}
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         url = f"{settings.PROTOCOL}://localhost:{settings.SLACK_SERVICE_PORT}{warehouse.INTERACTIVE_REQUEST}"
@@ -402,6 +427,7 @@ def command_help():
 
     Output_data: {}, 200
     """
+    asdasd
     data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))
     slack.post_ephemeral_response_message([messages.slack_command_help()], data['response_url'][0], 'blocks')
 

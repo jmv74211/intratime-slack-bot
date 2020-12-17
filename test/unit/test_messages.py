@@ -8,7 +8,7 @@ from intratime_slack_bot.lib import messages, test_utils
 
 TEST_MODULE_NAME = 'messages'
 
-TEST_MAKE_MESSAGE_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_make_message.json')
+TEST_GET_MESSAGE_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_get_message.json')
 
 TEST_SET_CUSTOM_MESSAGE_DATA = test_utils.load_template_test_data(TEST_MODULE_NAME, 'test_set_custom_message.json')
 
@@ -18,9 +18,9 @@ TEST_GENERATE_SLACK_HISTORY_REPORT_DATA = test_utils.load_template_test_data(TES
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('code, custom_message, expected_result', TEST_MAKE_MESSAGE_DATA)
-def test_make_message(code, custom_message, expected_result):
-    assert messages.make_message(code, custom_message) == expected_result
+@pytest.mark.parametrize('code, custom_message, expected_result', TEST_GET_MESSAGE_DATA)
+def test_get_message(code, custom_message, expected_result):
+    assert messages.get(code, custom_message) == expected_result
 
 # ----------------------------------------------------------------------------------------------------------------------
 

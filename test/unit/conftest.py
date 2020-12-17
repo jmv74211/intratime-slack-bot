@@ -4,14 +4,14 @@ from time import sleep
 
 from intratime_slack_bot.lib.test_utils import TEST_FILE
 from intratime_slack_bot.config import settings
-from intratime_slack_bot.lib import intratime, crypt
+from intratime_slack_bot.lib import intratime, crypt, logger, slack, logger
 from intratime_slack_bot.lib.db import user
 from intratime_slack_bot.config.settings import INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-TEST_USER_DATA = {'user_id': 'test', 'username': 'test', 'intratime_mail': settings.INTRATIME_TEST_USER_EMAIL,
+TEST_USER_DATA = {'user_id': 'test', 'user_name': 'test', 'intratime_mail': settings.INTRATIME_TEST_USER_EMAIL,
                   'password': crypt.encrypt(settings.INTRATIME_TEST_USER_PASSWORD),
                   'registration_date': '2020-09-18 15:57:00', 'last_registration_date': '2020-09-15 15:58:00'}
 
@@ -31,7 +31,7 @@ def remove_test_file(request):
 
 @pytest.fixture(scope='module')
 def token(request):
-    token = intratime.get_auth_token(INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD, TEST_FILE)
+    token = intratime.get_auth_token(INTRATIME_TEST_USER_EMAIL, INTRATIME_TEST_USER_PASSWORD)
     return token
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -133,3 +133,33 @@ def post_clock_out(request, token):
     yield
     sleep(CLOCK_SLEEP_TIME)
     intratime.clocking(intratime.OUT_ACTION, token, TEST_USER_DATA['intratime_mail'])
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_slack_logger(remove_test_file):
+    backup_logger = slack.LOGGER
+    slack.LOGGER = logger.get_logger('test', settings.LOGS_LEVEL, TEST_FILE)
+    yield
+    slack.LOGGER = backup_logger
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_intratime_logger(remove_test_file):
+    backup_logger = intratime.LOGGER
+    intratime.LOGGER = logger.get_logger('test', settings.LOGS_LEVEL, TEST_FILE)
+    yield
+    intratime.LOGGER = backup_logger
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_user_logger(remove_test_file):
+    backup_logger = user.LOGGER
+    user.LOGGER = logger.get_logger('test', settings.LOGS_LEVEL, TEST_FILE)
+    yield
+    user.LOGGER = backup_logger

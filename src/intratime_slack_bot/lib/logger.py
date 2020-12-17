@@ -1,52 +1,51 @@
-from datetime import datetime
-
+import logging
+import sys
+import os
+from logging.handlers import TimedRotatingFileHandler
 from intratime_slack_bot.config import settings
-from intratime_slack_bot.lib import time_utils
-from intratime_slack_bot.lib import messages
+from intratime_slack_bot.lib.test_utils import TEST_FILE
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-DEBUG = 'DEBUG'
-INFO = 'INFO'
-ERROR = 'ERROR'
-CRITICAL = 'CRITICAL'
+FORMATTER = logging.Formatter("%(asctime)s — %(levelname)s — %(filename)s:%(funcName)s:%(lineno)d — %(message)s")
 
-LEVELS = {
-    'DEBUG': 1,
-    'INFO': 2,
-    'ERROR': 3,
-    'CRITICAL': 4
-}
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def log(file, level, message_id=-1, custom_message=""):
-    """
-    Post a log in the indicated file
+def get_console_handler():
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(FORMATTER)
+    return console_handler
 
-    Parameters
-    ----------
-    file: String
-        File path to log
-    level: String
-        Log level
-    message_id: int
-        message id from messages module
-    """
+# ----------------------------------------------------------------------------------------------------------------------
 
-    datetime = time_utils.get_current_date_time()
 
-    if message_id != -1:
-        try:
-            description = messages.message[f"{message_id}"]
-        except KeyError:
-            level = ERROR
-            description = f"Could not get the message description from message with id {message_id}"
+def get_file_handler(log_file_path):
+    file_handler = TimedRotatingFileHandler(log_file_path, when='midnight')
+    file_handler.setFormatter(FORMATTER)
+    return file_handler
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_logger(logger_name, level, custom_file=None):
+    if custom_file is None:
+        log_file_path = os.path.join(settings.LOGS_PATH, f"{logger_name}.log")
     else:
-        description = custom_message
+        log_file_path = os.path.join(custom_file)
 
-    if LEVELS[level] >= LEVELS[settings.LOG_LEVEL]:
-        with open(file, 'a') as f:
-            f.write(f"[{datetime}] {level}: {description}\n")
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(level)
+    logger.addHandler(get_console_handler())
+    logger.addHandler(get_file_handler(log_file_path))
+
+    # with this pattern, it's rarely necessary to propagate the error up to parent
+    logger.propagate = False
+
+    return logger

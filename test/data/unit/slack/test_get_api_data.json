@@ -226,5 +226,10 @@
                 ]
             }
         }
+    },
+    {
+        "data": "token=testo&team_id=testS&team_domain=test56&channel_id=test&channel_name=slack-bot-and-commands&user_id=test&user_name=test&command=%time&text=&api_app_id=ARSTL2X6F&response_url=hs4XvBzLgj31ogA5&trigger_id=test",
+        "callback_id": "bad_callback",
+        "expected_api_data": null
     }
 ]

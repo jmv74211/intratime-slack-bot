@@ -1,4 +1,4 @@
-from intratime_slack_bot.lib import logger, time_utils, intratime
+from intratime_slack_bot.lib import time_utils, intratime
 from intratime_slack_bot.config import settings
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -31,24 +31,22 @@ IMAGE_BASE_URL = 'https://raw.githubusercontent.com/jmv74211/tools/master/images
 
 """
 Codes:
-    DEBUG:    From 1000 to 1999
-    INFO:     From 2000 to 2999
-    ERROR:    From 3000 to 3999
-    CRITICAL: From 4000 to 4999
+    DEBUG:         From 1000 to 1999
+    INFO/WARNING:  From 2000 to 2999
+    ERROR:         From 3000 to 3999
 """
 
 message = {
     "0": "Test message",
     "1000": "Got Intratime API token",
-    "1001": "Bad intratime auth token when trying clocking",
 
     # ------------------------------------------------------------------------------------------------------------------
 
     "2000": "Registration done successfully",
     "2001": "User created successfully",
     "2002": "User deleted successfully",
-    "2003": "User updated successfully",
-    "2003": "User updated successfully",
+    "2003": "Slack message is too long to post it",
+    "2004": "User updated successfully",
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -71,16 +69,25 @@ message = {
     "3016": "Internal server error",
     "3017": "Undefined error",
     "3018": "Invalid value",
+    "3019": "Could not get user clocks",
+    "3020": "Bad intratime auth token when trying clocking",
+    "3021": "Invalid history time range",
+    "3022": "Could not validate the slack message",
+    "3023": "Could not sent the private message",
+    "3024": "Could not sent the ephemeral message",
+    "3025": "Could not sent the ephemeral response message",
+    "3026": "Could not find callback id",
+    "3027": "Could not parse the request",
+    "3028": "Could not validate user model",
+    "3029": "Could not log user action",
+    "3030": "Bad intratime credentials"
 
-    # ------------------------------------------------------------------------------------------------------------------
-
-    "4000": ''
 }
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get(code, log_file=settings.APP_LOG_FILE):
+def get(code, message_to_append=None):
     """
     Function to get a custom message from message_id
 
@@ -88,8 +95,6 @@ def get(code, log_file=settings.APP_LOG_FILE):
     ----------
     code: int
         Message id
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -97,35 +102,12 @@ def get(code, log_file=settings.APP_LOG_FILE):
     """
 
     try:
-        return message[str(code)]
+        if message_to_append is None:
+            return message[str(code)]
+        else:
+            return f"{ message[str(code)]}: {message_to_append}"
     except KeyError as exception:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3001)
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-def make_message(code, custom_message):
-    """
-    Function to make a custom log message
-
-    Parameters
-    ----------
-    code: int
-        Message id
-    custom_message: String
-        Text to add to the message id content
-
-    Returns
-    -------
-        (String): Combined message
-    """
-
-    try:
-        new_custom_message = f"{message[str(code)]} {custom_message}"
-    except KeyError:
-        new_custom_message = f"Error, could not get message with ID = {code}"
-
-    return new_custom_message
+        return f"Error, could not get message with ID = {code}"
 
 # ----------------------------------------------------------------------------------------------------------------------
 

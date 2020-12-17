@@ -2,8 +2,7 @@ import pytest
 import freezegun
 
 from datetime import datetime
-from intratime_slack_bot.lib import time_utils, logger, codes, messages
-from intratime_slack_bot.lib.test_utils import check_if_log_exist, TEST_FILE
+from intratime_slack_bot.lib import time_utils, codes, messages
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -35,14 +34,13 @@ def test_get_current_date():
 
 def test_get_time_difference():
     # BAD CASES
-    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, 'invalid_unit', TEST_FILE) == codes.INVALID_VALUE
-    assert check_if_log_exist(messages.make_message(3018, f"of 'UNIT' parameter. Received UNIT = invalid_unit"),
-                              TEST_FILE, logger.ERROR)
+    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, 'invalid_unit') == codes.INVALID_VALUE
+
     # VALID CASES
-    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.DAYS, TEST_FILE) == 25
-    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.HOURS, TEST_FILE) == 604
-    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.MINUTES, TEST_FILE) == 36240
-    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.SECONDS, TEST_FILE) == 2174400
+    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.DAYS) == 25
+    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.HOURS) == 604
+    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.MINUTES) == 36240
+    assert time_utils.get_time_difference(DATETIME_FROM, DATETIME_TO, time_utils.SECONDS) == 2174400
 
 # ----------------------------------------------------------------------------------------------------------------------
 

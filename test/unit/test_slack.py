@@ -7,8 +7,8 @@ import freezegun
 
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
-from intratime_slack_bot.lib import slack, codes, messages, logger, intratime, time_utils, test_utils
-from intratime_slack_bot.lib.test_utils import check_if_log_exist, read_json_file_data, UNIT_TEST_DATA_PATH, TEST_FILE
+from intratime_slack_bot.lib import slack, codes, messages, intratime, time_utils, test_utils
+from intratime_slack_bot.lib.test_utils import read_json_file_data, check_if_log_exist, UNIT_TEST_DATA_PATH
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -45,31 +45,33 @@ interactive_test_data = {'type': 'dialog_submission', 'token': 'test', 'action_t
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def test_validate_message():
-    # BAD FORMATS
+def test_validate_message(mock_slack_logger):
+    # BAD FORMAT
     assert not slack.validate_message(1234)
-    assert not slack.validate_message({'BAD_FORMAT': 'BAD_FORMAT'})
+    assert check_if_log_exist(messages.get(3022, '1234'))
 
-    # VALID FORMATS
+    # VALID FORMAT
     assert slack.validate_message(TEXT)
-    assert slack.validate_message(TEXT_ATTACHEMENT)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def test_post_private_message(remove_test_file):
+def test_post_private_message(mock_slack_logger):
     # BAD CHANNEL
-    assert slack.post_private_message(TEXT, 'BAD_CHANNEL', log_file=TEST_FILE) == codes.BAD_REQUEST_DATA
-    assert check_if_log_exist(messages.make_message(3015, f"channel_not_found"), TEST_FILE, logger.ERROR)
+    assert slack.post_private_message(TEXT, 'BAD_CHANNEL') == codes.BAD_REQUEST_DATA
+    assert check_if_log_exist(messages.get(3015, 'Request text code = {"ok":false,"error":"channel_not_found"}'))
 
     # BAD TOKEN
-    assert slack.post_private_message(TEXT, SLACK_CHANNEL, log_file=TEST_FILE, token='BAD_TOKEN') == \
-        codes.BAD_REQUEST_DATA
-    assert check_if_log_exist(messages.make_message(3015, f"invalid_auth"), TEST_FILE, logger.ERROR)
+    assert slack.post_private_message(TEXT, SLACK_CHANNEL, token='BAD_TOKEN') == codes.BAD_REQUEST_DATA
+    assert check_if_log_exist(messages.get(3015, 'Request text code = {"ok":false,"error":"invalid_auth"}'))
 
     # BAD TEXT
-    assert slack.post_private_message(1234, SLACK_CHANNEL, log_file=TEST_FILE) == codes.INVALID_VALUE
-    assert check_if_log_exist(messages.make_message(3018, f"of message parameter"), TEST_FILE, logger.ERROR)
+    assert slack.post_private_message(1234, SLACK_CHANNEL) == codes.INVALID_VALUE
+    assert check_if_log_exist(messages.get(3022, '1234'))
+
+    # MESSAGE TOO LONG
+    assert slack.post_private_message('t' * 20000, SLACK_CHANNEL) == codes.BAD_REQUEST_DATA
+    assert check_if_log_exist(messages.get(3023, f"Status code = 400"))
 
     # SUCCESS MESSAGES
     assert slack.post_private_message(TEXT, SLACK_CHANNEL) == codes.SUCCESS
@@ -79,19 +81,17 @@ def test_post_private_message(remove_test_file):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def test_post_ephemeral_message(remove_test_file):
+def test_post_ephemeral_message(mock_slack_logger):
     # BAD CHANNEL
-    assert slack.post_ephemeral_message(TEXT, 'BAD_CHANNEL', TEST_USER_ID, TEST_FILE) == codes.BAD_REQUEST_DATA
-    assert check_if_log_exist(messages.make_message(3015, f"channel_not_found"), TEST_FILE, logger.ERROR)
-
+    assert slack.post_ephemeral_message(TEXT, 'BAD_CHANNEL', TEST_USER_ID) == codes.BAD_REQUEST_DATA
+    assert check_if_log_exist(messages.get(3015, 'Request text code = {"ok":false,"error":"channel_not_found"}'))
     # BAD TOKEN
-    assert slack.post_ephemeral_message(TEXT, SLACK_CHANNEL, TEST_USER_ID, TEST_FILE, 'BAD_TOKEN') \
-        == codes.BAD_REQUEST_DATA
-    assert check_if_log_exist(messages.make_message(3015, f"invalid_auth"), TEST_FILE, logger.ERROR)
+    assert slack.post_ephemeral_message(TEXT, SLACK_CHANNEL, TEST_USER_ID, 'BAD_TOKEN') == codes.BAD_REQUEST_DATA
+    assert check_if_log_exist(messages.get(3015, 'Request text code = {"ok":false,"error":"invalid_auth"}'))
 
     # BAD TEXT
-    assert slack.post_ephemeral_message(1234, SLACK_CHANNEL, TEST_USER_ID, TEST_FILE) == codes.INVALID_VALUE
-    assert check_if_log_exist(messages.make_message(3018, f"of message parameter"), TEST_FILE, logger.ERROR)
+    assert slack.post_ephemeral_message(1234, SLACK_CHANNEL, TEST_USER_ID) == codes.INVALID_VALUE
+    assert check_if_log_exist(messages.get(3022, '1234'))
 
     # SUCCESS MESSAGES
     assert slack.post_ephemeral_message(TEXT, SLACK_CHANNEL, TEST_USER_ID) == codes.SUCCESS
@@ -108,20 +108,31 @@ def test_decode_slack_args(data, expected_decoded_data):
 
 
 @pytest.mark.parametrize('data, callback_id, expected_api_data', TEST_GET_API_DATA, ids=TEST_GET_API_NAMES)
-def test_get_api_data(data, callback_id, expected_api_data):
+def test_get_api_data(data, callback_id, expected_api_data, mock_slack_logger):
     api_data = slack.get_api_data(data, callback_id)
-    api_data['token'] = 'test'
-    api_data['trigger_id'] = 'test'
-    api_data['dialog'] = json.loads(api_data['dialog'])
 
-    assert api_data == expected_api_data
+    if api_data is None:
+        assert check_if_log_exist(messages.get(3026, callback_id))
+    else:
+        api_data['token'] = 'test'
+        api_data['trigger_id'] = 'test'
+        api_data['dialog'] = json.loads(api_data['dialog'])
+
+        assert api_data == expected_api_data
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize('data, expected_result', TEST_GENERATE_CLOCK_MESSAGE_DATA)
-def test_generate_clock_message(data, expected_result):
-    assert slack.generate_clock_message(data) == expected_result
+def test_generate_clock_message(data, expected_result, mock_slack_logger):
+    if 'action' not in data:
+        assert slack.generate_clock_message(data) == codes.BAD_REQUEST_DATA
+        assert check_if_log_exist(messages.get(3015))
+    elif 'action' in data and expected_result == codes.BAD_REQUEST_DATA:
+        assert slack.generate_clock_message(data) == codes.BAD_REQUEST_DATA
+        assert check_if_log_exist(messages.get(3018, data['action']))
+    else:
+        assert slack.generate_clock_message(data) == expected_result
 
 # ----------------------------------------------------------------------------------------------------------------------
 

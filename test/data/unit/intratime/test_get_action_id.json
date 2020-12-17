@@ -14,5 +14,9 @@
     {
         "action": "return",
         "output": 3
+    },
+    {
+        "action": "bad_action",
+        "output": null
     }
 ]

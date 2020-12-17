@@ -1,12 +1,13 @@
 import requests
 import json
 import re
+import logging
 
 from datetime import datetime, date
 from http import HTTPStatus
 
 from http import HTTPStatus
-from intratime_slack_bot.lib import logger, codes, messages, time_utils
+from intratime_slack_bot.lib import codes, messages, time_utils, logger
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
 
@@ -29,10 +30,12 @@ INTRATIME_API_HEADER = {
                             'charset': 'utf8'
                         }
 
+LOGGER = logger.get_logger('intratime', settings.LOGS_LEVEL)
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_action_id(action, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def get_action_id(action):
     """
     Function to get the intratime action ID
 
@@ -40,8 +43,6 @@ def get_action_id(action, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
     ----------
     action: str
         Action enum: ['in', 'out', 'pause', 'return']
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -58,13 +59,13 @@ def get_action_id(action, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
 
     try:
         return switcher[action]
-    except KeyError as excetion:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3000)
+    except KeyError as exception:
+        LOGGER.error(messages.get(3000))
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_auth_token(email, password, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def get_auth_token(email, password):
     """
     Function to get the Intratime auth token
 
@@ -74,8 +75,6 @@ def get_auth_token(email, password, log_file=settings.INTRATIME_SERVICE_LOG_FILE
         User authentication email
     password: str
         User authentication password
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -91,24 +90,22 @@ def get_auth_token(email, password, log_file=settings.INTRATIME_SERVICE_LOG_FILE
     try:
         request = requests.post(url=f"{INTRATIME_API_URL}{INTRATIME_API_LOGIN_PATH}", data=payload,
                                 headers=INTRATIME_API_HEADER)
-    except ConnectionError:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3002)
+    except ConnectionError as exception:
+        LOGGER.error(messages.get(30002, exception))
         return codes.INTRATIME_API_CONNECTION_ERROR
 
     try:
         token = json.loads(request.text)['USER_TOKEN']
-    except KeyError:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3003)
+    except KeyError as exception:
+        LOGGER.error(messages.get(3003, exception))
         return codes.INTRATIME_AUTH_ERROR
-
-    logger.log(file=log_file, level=logger.DEBUG, custom_message=messages.make_message(1000, f"for user {email}"))
 
     return token
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_action_name(action, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def get_action_name(action):
     """
     Function to get the intratime action name
 
@@ -116,8 +113,6 @@ def get_action_name(action, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
     ----------
     action: int
         Action id: 0, 1, 2 or 3
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -134,13 +129,13 @@ def get_action_name(action, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
 
     try:
         return switcher[action]
-    except KeyError as excetion:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3000)
+    except KeyError as exception:
+        LOGGER.error(messages.get(3000, exception))
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def check_user_credentials(email, password, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def check_user_credentials(email, password):
     """
     Function to check if user authentication is successful
 
@@ -150,8 +145,6 @@ def check_user_credentials(email, password, log_file=settings.INTRATIME_SERVICE_
         User email authentication
     password: str
         User password authentication
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -159,14 +152,14 @@ def check_user_credentials(email, password, log_file=settings.INTRATIME_SERVICE_
         True if successful authentication False otherwise
     """
 
-    token = get_auth_token(email=email, password=password, log_file=log_file)
+    token = get_auth_token(email=email, password=password)
 
     return token != codes.INTRATIME_API_CONNECTION_ERROR and token != codes.INTRATIME_AUTH_ERROR
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def get_user_clocks(token, datetime_from, datetime_to, action=None):
     """
     Function to get the user clocks in a range time
 
@@ -180,8 +173,6 @@ def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=set
         Lower datetime limit in format %Y-%m-%d %H:%M:%S
     action: str
         Action enum: ['in', 'out', 'pause', 'return']
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -201,6 +192,7 @@ def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=set
         request = requests.get(url=INTRATIME_API_USER_CLOCKINGS_PATH, headers=INTRATIME_API_HEADER)
 
         if request.status_code == HTTPStatus.UNAUTHORIZED:
+            LOGGER.error(messages.get(3030))
             return codes.UNAUTHORIZED
 
         try:
@@ -215,16 +207,17 @@ def get_user_clocks(token, datetime_from, datetime_to, action=None, log_file=set
             return filtered_data
 
         except KeyError as exception:
+            LOGGER.error(messages.get(3002, exception))
             return codes.INTRATIME_NO_RESPONSE
 
-    except ConnectionError:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3002)
+    except ConnectionError as exception:
+        LOGGER.error(messages.get(3002, exception))
         return codes.INTRATIME_API_CONNECTION_ERROR
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def clocking(action, token, email):
     """
     Function to register an action in Intratime API
 
@@ -236,8 +229,6 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
         User session token
     email: str
         User email
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -261,25 +252,26 @@ def clocking(action, token, email, log_file=settings.INTRATIME_SERVICE_LOG_FILE)
         request = requests.post(url=INTRATIME_API_CLOCKING_PATH, data=payload, headers=INTRATIME_API_HEADER)
 
         if request.status_code == HTTPStatus.UNAUTHORIZED:
-            logger.log(file=log_file, level=logger.DEBUG, message_id=1001)
+            LOGGER.error(messages.get(3020))
             return codes.UNAUTHORIZED
 
         if request.status_code == HTTPStatus.CREATED:
             user_info_message = f"- user: {email}, action: {action}"
-            logger.log(file=log_file, level=logger.INFO, custom_message=messages.make_message(2000, user_info_message))
-            user.update_last_registration_datetime(user.get_user_id(email, log_file), log_file)
+            user.update_last_registration_datetime(user.get_user_id(email))
+            LOGGER.info(messages.get(2000, user_info_message))
             return codes.SUCCESS
 
+        LOGGER.error(messages.get(3004, f"status code = {request.status_code}"))
         return codes.NO_VALID_RESPONSE
 
     except ConnectionError:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3002)
+        LOGGER.error(messages.get(3002, exception))
         return codes.INTRATIME_API_CONNECTION_ERROR
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_last_clock(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def get_last_clock(token):
     """
     Function to get the last user clock action
 
@@ -287,8 +279,6 @@ def get_last_clock(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
     ----------
     token: str
         Authentication token
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -298,12 +288,12 @@ def get_last_clock(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
 
     datetime_from = time_utils.get_past_datetime_from_current_datetime(2592000)  # 1 month
     datetime_to = time_utils.get_current_date_time()
-    return get_user_clocks(token, datetime_from, datetime_to, None, log_file)[0]
+    return get_user_clocks(token, datetime_from, datetime_to, None)[0]
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_last_clock_type(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
+def get_last_clock_type(token):
     """
     Function to get the last user clock action type. e.g: PAUSE
 
@@ -311,8 +301,6 @@ def get_last_clock_type(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
     ----------
     token: str
         Authentication token
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -320,7 +308,7 @@ def get_last_clock_type(token, log_file=settings.INTRATIME_SERVICE_LOG_FILE):
         Last user clock type
     """
 
-    return get_action_name(get_last_clock(token, log_file)['INOUT_TYPE'])
+    return get_action_name(get_last_clock(token)['INOUT_TYPE'])
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -338,8 +326,9 @@ def user_can_clock_this_action(token, action):
 
     Returns
     -------
-    boolean:
-        True if the user can clock that action (action compatible with the previous one), False otherwise
+    tuple(boolean, str):
+        boolean: True if the user can clock that action (action compatible with the previous one), False otherwise
+        str: Message that indicates the reason why it has not been able to carry out the action.
     """
 
     last_user_clock_action = get_last_clock_type(token)
@@ -435,6 +424,7 @@ def get_clock_data_in_time_range(token, time_range):
     elif time_range == 'month':
         lower_limit_datetime = time_utils.get_first_month_day()
     else:
+        LOGGER.error(messages.get(3021, f"Time range = {time_range}"))
         return codes.INVALID_HISTORY_ACTION
 
     data = get_parsed_clock_data(token, lower_limit_datetime, time_utils.get_current_date_time())

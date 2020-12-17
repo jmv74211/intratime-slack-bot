@@ -9,10 +9,9 @@ MONGO_DB_HOST = 'localhost'
 APP_PATH = '/usr/local/app/development/intratime-slack-bot'
 LOG_LEVEL = 'DEBUG'
 
-APP_LOG_FILE = 'app.log'
-INTRATIME_SERVICE_LOG_FILE = 'intratime.log'
-USER_SERVICE_LOG_FILE = 'user.log'
-SLACK_SERVICE_LOG_FILE = 'slack.log'
+APP_PATH = '/usr/local/app/development/intratime-slack-bot'
+LOGS_PATH = os.path.join(APP_PATH, 'logs')
+LOGS_LEVEL = logging.INFO
 
 CIPHER_KEY = os.environ['CIPHER_KEY']  # It must be 16 || 32 characters long
 

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from intratime_slack_bot.config import settings
-from intratime_slack_bot.lib import codes, messages, logger
+from intratime_slack_bot.lib import codes, messages
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ def get_current_date():
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_time_difference(datetime_from, datetime_to, unit, log_file=settings.APP_LOG_FILE):
+def get_time_difference(datetime_from, datetime_to, unit):
     """
     Get the time difference between two datetimes (time subtraction).
 
@@ -58,8 +58,6 @@ def get_time_difference(datetime_from, datetime_to, unit, log_file=settings.APP_
         Upper limit datetime  in format %Y-%m-%d %H:%M:%S
     unit: str
         Unit of time to express the result. enum: ['day', 'hour', 'minute', 'second']
-    log_file: str
-        Log file when the action will be logged in case of failure
 
     Returns
     -------
@@ -80,8 +78,6 @@ def get_time_difference(datetime_from, datetime_to, unit, log_file=settings.APP_
     elif unit == SECONDS:
         return int((datetime_to_object - datetime_from_object).total_seconds())
     else:
-        logger.log(file=log_file, level=logger.ERROR,
-                   custom_message=messages.make_message(3018, f"of 'UNIT' parameter. Received UNIT = {unit}"))
         return codes.INVALID_VALUE
 
 # ----------------------------------------------------------------------------------------------------------------------

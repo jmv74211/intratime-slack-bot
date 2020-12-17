@@ -1,6 +1,7 @@
 import pymongo
 
-from intratime_slack_bot.lib import warehouse
+from intratime_slack_bot.config import settings
+from intratime_slack_bot.lib import warehouse, logger
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -10,8 +11,10 @@ USER_COLLECTION = DB['user']
 REGISTRATION_COLLECTION = DB['registration']
 HISTORY_COLLECTION = DB['history']
 
-USER_MODEL = ['user_id', 'username', 'password', 'intratime_mail', 'registration_date', 'last_registration_date']
-HISTORY_MODEL = ['date_time', 'username', 'user_id', 'command', 'parameters']
+USER_MODEL = ['user_id', 'user_name', 'password', 'intratime_mail', 'registration_date', 'last_registration_date']
+HISTORY_MODEL = ['date_time', 'user_name', 'user_id', 'command', 'parameters']
+
+LOGGER = logger.get_logger('database', settings.LOGS_LEVEL)
 
 # ----------------------------------------------------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 from intratime_slack_bot.config import settings
-from intratime_slack_bot.lib.db.database import validate_data, USER_COLLECTION, USER_MODEL
-from intratime_slack_bot.lib import warehouse, logger, codes, messages, time_utils
+from intratime_slack_bot.lib.db.database import validate_data, USER_COLLECTION, USER_MODEL, LOGGER
+from intratime_slack_bot.lib import warehouse, codes, messages, time_utils, logger
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ def user_exist(user_id):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def add_user(data, log_file=settings.USER_SERVICE_LOG_FILE):
+def add_user(data):
     """
     Function to add a user in the database
 
@@ -36,8 +36,6 @@ def add_user(data, log_file=settings.USER_SERVICE_LOG_FILE):
     ----------
     data: dict
         User data
-    log_file: str
-        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -49,27 +47,27 @@ def add_user(data, log_file=settings.USER_SERVICE_LOG_FILE):
     """
 
     if not validate_data(data, USER_MODEL):
-        logger.log(file=log_file, level=logger.ERROR,
-                   custom_message=messages.make_message(3005, f"Expected model {USER_MODEL} and got this data: {data}"))
+        LOGGER.error(messages.get(3028))
         return codes.BAD_USER_DATA
 
     if user_exist(data['user_id']):
-        logger.log(file=log_file, level=logger.ERROR, message_id=3010)
+        LOGGER.error(messages.get(3010))
         return codes.USER_ALREADY_EXIST
 
     insert_request = USER_COLLECTION.insert_one(data)
 
     if insert_request.inserted_id is None:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3006)
+        LOGGER.error(messages.get(3006))
         return codes.USER_CREATION_ERROR
 
-    logger.log(file=log_file, level=logger.INFO, custom_message=messages.make_message(2001, f"Data = {data}"))
+    LOGGER.info(messages.get(2001, data['user_id']))
+
     return codes.SUCCESS
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def delete_user(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
+def delete_user(user_id):
     """
     Function to delete a user from the database
 
@@ -77,8 +75,6 @@ def delete_user(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
     ----------
     user_id: str
         User identifier
-    log_file: str
-        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -89,22 +85,23 @@ def delete_user(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
     """
 
     if not user_exist(user_id):
-        logger.log(file=log_file, level=logger.ERROR, message_id=3007)
+        LOGGER.error(messages.get(3008, "user not exists"))
         return codes.USER_NOT_FOUND
 
     delete_request = USER_COLLECTION.delete_one({'user_id': user_id})
 
     if delete_request.deleted_count <= 0:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3008)
+        LOGGER.error(messages.get(3008))
         return codes.USER_DELETE_ERROR
 
-    logger.log(file=log_file, level=logger.INFO, message_id=2002)
+    LOGGER.info(messages.get(2002, user_id))
+
     return codes.SUCCESS
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def update_user(user_id, new_data, log_file=settings.USER_SERVICE_LOG_FILE):
+def update_user(user_id, new_data):
     """
     Function to update the user information in the database
 
@@ -114,8 +111,6 @@ def update_user(user_id, new_data, log_file=settings.USER_SERVICE_LOG_FILE):
         User identifier
     new_data: dict
         New user data
-    log_file: str
-        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -127,28 +122,27 @@ def update_user(user_id, new_data, log_file=settings.USER_SERVICE_LOG_FILE):
     """
 
     if not user_exist(user_id):
-        logger.log(file=log_file, level=logger.ERROR, message_id=3007)
+        LOGGER.error(messages.get(3009, "user not exists"))
         return codes.USER_NOT_FOUND
 
     if not validate_data(new_data, USER_MODEL):
-        logger.log(file=log_file, level=logger.ERROR,
-                   custom_message=messages.make_message(3005,
-                                                        f"Expected model {USER_MODEL} and got this data: {new_data}"))
+        LOGGER.error(messages.get(3028))
         return codes.BAD_USER_DATA
 
     update_request = USER_COLLECTION.update_one({'user_id': user_id}, {'$set': new_data})
 
     if update_request.modified_count <= 0:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3009)
+        LOGGER.error(messages.get(3009))
         return codes.USER_UPDATE_ERROR
 
-    logger.log(file=log_file, level=logger.INFO, message_id=2003)
+    LOGGER.info(messages.get(2004, f"user_id = {user_id}"))
+
     return codes.SUCCESS
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_user_data(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
+def get_user_data(user_id):
     """
     Function to get the user information from the database
 
@@ -156,8 +150,6 @@ def get_user_data(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
     ----------
     user_id: str
         User identifier
-    log_file: str
-        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -168,7 +160,7 @@ def get_user_data(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
     """
 
     if not user_exist(user_id):
-        logger.log(file=log_file, level=logger.ERROR, message_id=3007)
+        LOGGER.error(messages.get(3009, "user not exists"))
         return codes.USER_NOT_FOUND
 
     user_data = USER_COLLECTION.find_one({'user_id': user_id})
@@ -193,7 +185,7 @@ def get_all_users_data():
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LOG_FILE):
+def update_last_registration_datetime(user_id):
     """
     Function to update the last registration user info
 
@@ -201,8 +193,6 @@ def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LO
     ----------
     user_id: str
         User identifier
-    log_file: str
-        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -213,7 +203,7 @@ def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LO
     """
 
     if not user_exist(user_id):
-        logger.log(file=log_file, level=logger.ERROR, message_id=3007)
+        LOGGER.error(messages.get(3009, "user not exists"))
         return codes.USER_NOT_FOUND
 
     user_data = get_user_data(user_id)
@@ -221,12 +211,12 @@ def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LO
     try:
         user_data['last_registration_date'] = time_utils.get_current_date_time()
     except KeyError:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3012)
+        LOGGER.error(messages.get(3012))
 
     update_request = USER_COLLECTION.update_one({'user_id': user_id}, {'$set': user_data})
 
     if update_request.modified_count <= 0:
-        logger.log(file=log_file, level=logger.ERROR, message_id=3011)
+        LOGGER.error(messages.get(3009))
         return codes.USER_UPDATE_ERROR
 
     return codes.SUCCESS
@@ -234,7 +224,7 @@ def update_last_registration_datetime(user_id, log_file=settings.USER_SERVICE_LO
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_user_id(email, log_file=settings.USER_SERVICE_LOG_FILE):
+def get_user_id(email):
     """
     Function to update the last registration user info
 
@@ -242,8 +232,6 @@ def get_user_id(email, log_file=settings.USER_SERVICE_LOG_FILE):
     ----------
     email: str
         User email
-    log_file: str
-        Log file when the action will be logged in case of failure or success
 
     Returns
     -------
@@ -256,8 +244,6 @@ def get_user_id(email, log_file=settings.USER_SERVICE_LOG_FILE):
     user_data = USER_COLLECTION.find_one({"intratime_mail": email})
 
     if user_data is None:
-        logger.log(file=log_file, level=logger.ERROR, custom_message=messages.make_message(3011,
-                                                                                           f"with mail = {email}"))
         return codes.BAD_USER_EMAIL
 
     return user_data['user_id']
