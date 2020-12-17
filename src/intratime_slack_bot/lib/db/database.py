@@ -8,8 +8,10 @@ MONGO_CLIENT = pymongo.MongoClient(warehouse.MONGO_DB_SERVER)
 DB = MONGO_CLIENT['intratime_slack_bot']
 USER_COLLECTION = DB['user']
 REGISTRATION_COLLECTION = DB['registration']
+HISTORY_COLLECTION = DB['history']
 
 USER_MODEL = ['user_id', 'username', 'password', 'intratime_mail', 'registration_date', 'last_registration_date']
+HISTORY_MODEL = ['date_time', 'username', 'user_id', 'command', 'parameters']
 
 # ----------------------------------------------------------------------------------------------------------------------
 

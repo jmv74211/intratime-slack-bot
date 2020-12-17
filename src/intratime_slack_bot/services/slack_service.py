@@ -9,6 +9,7 @@ from functools import wraps
 
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db import user
+from intratime_slack_bot.lib.db.monitoring import add_history_register
 from intratime_slack_bot.lib import messages, warehouse, slack, intratime, codes, crypt, slack_ui
 
 app = Flask(__name__)
@@ -78,6 +79,28 @@ def validate_user(func):
             message = messages.slack_warning_message('You are not registered. Please sign up using `/sign_up` command')
             slack.post_ephemeral_response_message([message], data['response_url'], 'blocks')
             return empty_response()
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def monitoring(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))
+        parameters = ""
+        try:
+            parameters = data['text'][0]
+        except KeyError:
+            pass
+
+        history_data = {'username': data['user_name'][0], 'user_id': data['user_id'][0], 'command': data['command'][0],
+                        'parameters': parameters}
+
+        add_history_register(history_data)
 
         return func(*args, **kwargs)
 
@@ -237,6 +260,7 @@ def get_interactive_data():
 
 @app.route(warehouse.CLOCK_REQUEST, methods=['POST'])
 @validate_user
+@monitoring
 @process_request
 def clock():
     """
@@ -268,6 +292,7 @@ def sign_up():
 
 @app.route(warehouse.UPDATE_USER_REQUEST, methods=['POST'])
 @validate_user
+@monitoring
 @process_request
 def update_user():
     """
@@ -284,6 +309,7 @@ def update_user():
 
 @app.route(warehouse.DELETE_USER_REQUEST, methods=['POST'])
 @validate_user
+@monitoring
 @process_request
 def delete_user():
     """
@@ -300,6 +326,7 @@ def delete_user():
 
 @app.route(warehouse.CLOCK_HISTORY_REQUEST, methods=['POST'])
 @validate_user
+@monitoring
 @process_request
 def user_clock_history():
     """
@@ -316,6 +343,7 @@ def user_clock_history():
 
 @app.route(warehouse.TIME_HISTORY_REQUEST, methods=['POST'])
 @validate_user
+@monitoring
 @process_request
 def user_worked_time_history():
     """
@@ -332,6 +360,7 @@ def user_worked_time_history():
 
 @app.route(warehouse.WORKED_TIME_REQUEST, methods=['POST'])
 @validate_user
+@monitoring
 @process_request
 def user_worked_time():
     """
@@ -348,6 +377,7 @@ def user_worked_time():
 
 @app.route(warehouse.TODAY_INFO_REQUEST, methods=['POST'])
 @validate_user
+@monitoring
 @process_request
 def user_today_info():
     """

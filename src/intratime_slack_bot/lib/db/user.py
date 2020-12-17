@@ -1,5 +1,3 @@
-import pymongo
-
 from intratime_slack_bot.config import settings
 from intratime_slack_bot.lib.db.database import validate_data, USER_COLLECTION, USER_MODEL
 from intratime_slack_bot.lib import warehouse, logger, codes, messages, time_utils

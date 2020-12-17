@@ -473,6 +473,7 @@ def process_interactive_data(data):
         if not user_can_clock_this_action[0]:
             post_ephemeral_response_message(messages.set_custom_message('INVALID_CLOCKING_ACTION',
                                             [user_can_clock_this_action[1]]), data['response_url'], 'blocks')
+            return
 
         # Clock the action
         request_status = intratime.clocking(data['submission']['action'], token, user_data['intratime_mail'])
@@ -492,9 +493,6 @@ def process_interactive_data(data):
                                                 'action': data['submission']['action']})
 
         post_ephemeral_response_message(clock_message, data['response_url'], 'blocks')
-
-    elif data['callback_id'] == TODAY_INFO_CALLBACK:
-        print("TODAY INFO")
 
     elif (data['callback_id'] == WORKED_TIME_CALLBACK or data['callback_id'] == CLOCK_HISTORY_CALLBACK or
           data['callback_id'] == TIME_HISTORY_CALLBACK):
@@ -560,6 +558,3 @@ def process_interactive_data(data):
                                             data['response_url'])
 
         post_ephemeral_response_message(messages.DELETE_USER_SUCCESS, data['response_url'])
-
-    elif data['callback_id'] == COMMAND_HELP_CALLBACK:
-        print("COMMAND HELP")
