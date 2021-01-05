@@ -16,6 +16,10 @@ USER_ALREADY_REGISTERED = 'This user is already registered'
 ADD_USER_ERROR = 'Could not add the user. Please contact with app administrator'
 USER_NOT_FOUND = 'This user is not registered'
 BAD_BD_CREDENTIALS = 'Bad intratime credentials. Please update the user (/update_user) with new credentials'
+NON_SLACK_REQUEST = 'Unauthorized. Only slack app can use this API.'
+BAD_SLACK_HEADERS_REQUEST = f"{NON_SLACK_REQUEST} Missing 'X-Slack-Signature' and 'X-Slack-Request-Timestamp headers'"
+BAD_SLACK_TIMESTAMP_REQUEST = f"{NON_SLACK_REQUEST} Bad timestamp"
+
 
 # SLACK MESSAGES
 
@@ -81,7 +85,6 @@ message = {
     "3028": "Could not validate user model",
     "3029": "Could not log user action",
     "3030": "Bad intratime credentials"
-
 }
 
 # ----------------------------------------------------------------------------------------------------------------------

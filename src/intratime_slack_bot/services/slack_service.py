@@ -5,6 +5,9 @@ import threading
 import logging
 import sys
 import os
+import time
+import hmac
+import hashlib
 
 from flask import Flask, jsonify, request, make_response
 from http import HTTPStatus
@@ -85,6 +88,38 @@ ALLOWED_COMMANDS = {
 
 def empty_response():
     return make_response('', HTTPStatus.OK)
+
+# ----------------------------------------------------------------------------------------------------------------------
+#                                                API DECORATORS                                                        #
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def validate_slack_request(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'X-Slack-Signature' not in request.headers or 'X-Slack-Request-Timestamp' not in request.headers:
+            return jsonify({'result': messages.BAD_SLACK_HEADERS_REQUEST}), HTTPStatus.BAD_REQUEST
+
+        request_signature = request.headers['X-Slack-Signature']
+        request_timestamp = int(request.headers['X-Slack-Request-Timestamp'])
+        request_body = request.get_data().decode('utf-8')
+
+        # Verify that the request is not prior to 1 minute (Avoid replay attacks)
+        if int(time.time() - request_timestamp) > 60:
+            return jsonify({'result': messages.BAD_SLACK_TIMESTAMP_REQUEST}), HTTPStatus.BAD_REQUEST
+
+        sign_basestring = f"v0:{request_timestamp}:{request_body}"
+        signature = hmac.new(bytes(settings.SLACK_APP_SIGNATURE, 'utf-8'), bytes(sign_basestring, 'utf-8'),
+                             digestmod=hashlib.sha256).hexdigest()
+        signature_check = f"v0={signature}"
+
+        # Validate request signature
+        if not hmac.compare_digest(signature_check, request_signature):
+            return jsonify({'result': messages.NON_SLACK_REQUEST}), HTTPStatus.UNAUTHORIZED
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -202,6 +237,8 @@ def process_request(func):
     return wrapper
 
 # ----------------------------------------------------------------------------------------------------------------------
+#                                                API REQUESTS                                                          #
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.ECHO_REQUEST, methods=['GET'])
@@ -211,15 +248,15 @@ def echo():
 
     Input_data: {}
 
-    Output_data: {'result': True/False}
+    Output_data: {'result': 'Alive'}
     """
-
-    return jsonify({'result': messages.ALIVE_MESSAGE}),
+    return jsonify({'result': messages.ALIVE_MESSAGE})
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 @app.route(warehouse.INTERACTIVE_REQUEST, methods=['POST'])
+@validate_slack_request
 def get_interactive_data():
     """
     Description: Endpoint to manage form dialog requests
@@ -284,6 +321,7 @@ def get_interactive_data():
 
 
 @app.route(warehouse.CLOCK_REQUEST, methods=['POST'])
+@validate_slack_request
 @validate_user
 @monitoring
 @process_request
@@ -301,6 +339,7 @@ def clock():
 
 
 @app.route(warehouse.ADD_USER_REQUEST, methods=['POST'])
+@validate_slack_request
 @process_request
 def sign_up():
     """
@@ -316,6 +355,7 @@ def sign_up():
 
 
 @app.route(warehouse.UPDATE_USER_REQUEST, methods=['POST'])
+@validate_slack_request
 @validate_user
 @monitoring
 @process_request
@@ -333,6 +373,7 @@ def update_user():
 
 
 @app.route(warehouse.DELETE_USER_REQUEST, methods=['POST'])
+@validate_slack_request
 @validate_user
 @monitoring
 @process_request
@@ -350,6 +391,7 @@ def delete_user():
 
 
 @app.route(warehouse.CLOCK_HISTORY_REQUEST, methods=['POST'])
+@validate_slack_request
 @validate_user
 @monitoring
 @process_request
@@ -367,6 +409,7 @@ def user_clock_history():
 
 
 @app.route(warehouse.TIME_HISTORY_REQUEST, methods=['POST'])
+@validate_slack_request
 @validate_user
 @monitoring
 @process_request
@@ -384,6 +427,7 @@ def user_worked_time_history():
 
 
 @app.route(warehouse.WORKED_TIME_REQUEST, methods=['POST'])
+@validate_slack_request
 @validate_user
 @monitoring
 @process_request
@@ -401,6 +445,7 @@ def user_worked_time():
 
 
 @app.route(warehouse.TODAY_INFO_REQUEST, methods=['POST'])
+@validate_slack_request
 @validate_user
 @monitoring
 @process_request
@@ -418,6 +463,7 @@ def user_today_info():
 
 
 @app.route(warehouse.COMMAND_HELP_REQUEST, methods=['POST'])
+@validate_slack_request
 def command_help():
     """
     Description: Endpoint to get the command help
@@ -427,7 +473,6 @@ def command_help():
 
     Output_data: {}, 200
     """
-    asdasd
     data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))
     slack.post_ephemeral_response_message([messages.slack_command_help()], data['response_url'][0], 'blocks')
 

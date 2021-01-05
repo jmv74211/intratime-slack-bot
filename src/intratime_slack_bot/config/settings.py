@@ -14,6 +14,7 @@ LOGS_PATH = os.path.join(APP_PATH, 'logs')
 LOGS_LEVEL = logging.INFO
 
 CIPHER_KEY = os.environ['CIPHER_KEY']  # It must be 16 || 32 characters long
+SLACK_APP_SIGNATURE = os.environ['SLACK_APP_SIGNATURE']
 
 SLACK_API_USER_TOKEN = os.environ['SLACK_API_USER_TOKEN']
 SLACK_API_BOT_TOKEN = os.environ['SLACK_API_BOT_TOKEN']
