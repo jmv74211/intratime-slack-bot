@@ -12,7 +12,7 @@ SLACK_SERVICE_PATH = os.path.join(settings.APP_PATH, 'src', 'intratime_slack_bot
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def launch_slack_service(request):
     if not process.is_running(SLACK_SERVICE_PATH):
         pid = process.run(['python3', SLACK_SERVICE_PATH])
@@ -20,3 +20,9 @@ def launch_slack_service(request):
     yield
     if process.is_running(SLACK_SERVICE_PATH):
         process.stop(pid)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_slack_headers():
+    return {"X-Slack-Request-Timestamp": str(int(time.time())), "X-Slack-Signature": "fake_signature"}

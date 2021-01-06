@@ -1,0 +1,32 @@
+---
+
+test_name: Get the help command response from the slack service API
+
+marks:
+  - usefixtures:
+      - launch_slack_service
+  - parametrize:
+      key: command_request
+      vals:
+        - "{clock_request}"
+        - "{sign_up_request}"
+        - "{update_user_request}"
+        - "{delete_user_request}"
+        - "{user_clock_history_request}"
+        - "{user_worked_time_history_request}"
+        - "{user_worked_time_request}"
+        - "{user_today_info_request}"
+        - "{help_request}"
+
+stages:
+  - name: "Bad timestamp header"
+    request:
+      url: "{protocol}://{host}:{slack_service_port}{command_request}"
+      method: POST
+      headers:
+        "X-Slack-Signature": "fake_signature"
+        "X-Slack-Request-Timestamp": "1609859563"
+    response:
+      status_code: 400
+      json:
+        result: "Unauthorized. Only slack app can use this API. Bad timestamp"
