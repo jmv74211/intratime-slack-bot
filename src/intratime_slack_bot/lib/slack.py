@@ -1,6 +1,7 @@
 import requests
 import time
 import json
+import urllib.parse
 
 from http import HTTPStatus
 
@@ -128,6 +129,7 @@ def post_private_message(message, channel,  mgs_type='text', token=settings.SLAC
             return codes.BAD_REQUEST_DATA
     except KeyError as exception:
         LOGGER.error(messages.get(3027))
+        return codes.BAD_REQUEST_DATA
 
     return codes.SUCCESS
 
@@ -196,6 +198,7 @@ def post_ephemeral_message(message, channel, user_id, token=settings.SLACK_API_U
             return codes.BAD_REQUEST_DATA
     except KeyError as exception:
         LOGGER.error(messages.get(3027))
+        return codes.BAD_REQUEST_DATA
 
     return codes.SUCCESS
 
@@ -268,7 +271,7 @@ def decode_slack_args(data):
     dict:
         Slack args in dict format
     """
-
+    data = urllib.parse.unquote(data)
     elements = [pair_value for item in data.split('&') for pair_value in item.split('=')]
     return dict(zip(elements[0::2], elements[1::2]))
 

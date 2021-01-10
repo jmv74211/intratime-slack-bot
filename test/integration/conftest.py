@@ -14,11 +14,13 @@ SLACK_SERVICE_PATH = os.path.join(settings.APP_PATH, 'src', 'intratime_slack_bot
 
 @pytest.fixture(scope='session')
 def launch_slack_service(request):
+    started = False
     if not process.is_running(SLACK_SERVICE_PATH):
         pid = process.run(['python3', SLACK_SERVICE_PATH])
         time.sleep(3)
+        started = True
     yield
-    if process.is_running(SLACK_SERVICE_PATH):
+    if process.is_running(SLACK_SERVICE_PATH) and started:
         process.stop(pid)
 
 # ----------------------------------------------------------------------------------------------------------------------

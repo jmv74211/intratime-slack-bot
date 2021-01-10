@@ -462,8 +462,9 @@ def slack_command_help():
 
     for command, data in ALLOWED_COMMANDS.items():
         if len(data['allowed_parameters']) > 0:
-            message += f"- *{command}*: {', '.join(str(param) for param in data['allowed_parameters'])}\n"
+            message += f"- *{command}*: {data['description']}\n {' ' * 10}_Accepted parameters_:" \
+                       f" [`{', '.join(str(param) for param in data['allowed_parameters'])}`]\n"
         else:
-            message += f"- *{command}*\n"
+            message += f"- *{command}*: {data['description']}\n"
 
     return write_slack_markdown(message)

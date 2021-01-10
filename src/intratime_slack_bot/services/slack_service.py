@@ -46,38 +46,50 @@ app.logger.addHandler(error_file_handler)
 
 ALLOWED_COMMANDS = {
     "/clock": {
+        "description": "Clock an action in intratime.",
         "allowed_parameters": ['in', 'pause', 'return', 'out'],
         "callback_id": slack.CLOCK_CALLBACK
     },
     "/clock_history": {
+        "description": "Get the clock history from intratime.",
         "allowed_parameters": ['today', 'week', 'month'],
         "callback_id": slack.CLOCK_HISTORY_CALLBACK
     },
     "/time_history": {
+        "description": "Get the time history from intratime.",
         "allowed_parameters": ['today', 'week', 'month'],
         "callback_id": slack.TIME_HISTORY_CALLBACK
     },
     "/time": {
+        "description": "Get the worked time from intratime.",
         "allowed_parameters": ['today', 'week', 'month'],
         "callback_id": slack.WORKED_TIME_CALLBACK
     },
     "/sign_up": {
+        "description": "Sign up for this app.",
         "allowed_parameters": [],
         "callback_id": slack.ADD_USER_CALLBACK
     },
     "/update_user": {
+        "description": "Update your app credentials if you modify your intratime credentials.",
         "allowed_parameters": [],
         "callback_id": slack.UPDATE_USER_CALLBACK
     },
     "/delete_user": {
+        "description": "Delete your user from this app.",
+        "spacing": 0,
         "allowed_parameters": [],
         "callback_id": slack.DELETE_USER_CALLBACK
     },
     "/today": {
+        "description": "Get the history and worked time from today.",
+        "spacing": 0,
         "allowed_parameters": [],
         "callback_id": slack.TODAY_INFO_CALLBACK
     },
     "/help": {
+        "description": "Show this help.",
+        "spacing": 0,
         "allowed_parameters": [],
         "callback_id": slack.COMMAND_HELP_CALLBACK
     }
@@ -127,13 +139,7 @@ def validate_slack_request(func):
 def validate_user(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # Convert from x=y&z=h to {x:y, z:h}
-        data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))
-
-        # Converts lists with size 1 into elements. e.g  x: ['test] --> x: 'test'
-        for key, value in data.items():
-            if type(value) is list and len(value) == 1:
-                data[key] = value[0]
+        data = slack.decode_slack_args(request.get_data().decode('utf-8'))
 
         if not user.user_exist(data['user_id']):
             message = messages.slack_warning_message('You are not registered. Please sign up using `/sign_up` command')
@@ -150,14 +156,14 @@ def validate_user(func):
 def monitoring(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))
+        data = slack.decode_slack_args(request.get_data().decode('utf-8'))
         parameters = ""
         try:
-            parameters = data['text'][0]
+            parameters = data['text']
         except KeyError:
             pass
 
-        history_data = {'user_name': data['user_name'][0], 'user_id': data['user_id'][0], 'command': data['command'][0],
+        history_data = {'user_name': data['user_name'], 'user_id': data['user_id'], 'command': data['command'],
                         'parameters': parameters}
 
         add_history_register(history_data)
@@ -173,17 +179,12 @@ def process_request(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         # DECODE SLACK DATA
-        data = urllib.parse.parse_qs(request.get_data().decode('utf-8'))  # Convert from x=y&z=h to {x:y, z:h}
-
-        # Converts lists with size 1 into elements. e.g  x: ['test] --> x: 'test'
-        for key, value in data.items():
-            if type(value) is list and len(value) == 1:
-                data[key] = value[0]
+        data = slack.decode_slack_args(request.get_data().decode('utf-8'))
 
         parameters = [data['command']]
 
         # Get command parameters
-        if 'text' in data:
+        if 'text' in data and data['text']:
             parameters.extend(data['text'].split(' '))
 
         command = parameters[0]
@@ -256,7 +257,6 @@ def echo():
 
 
 @app.route(warehouse.INTERACTIVE_REQUEST, methods=['POST'])
-@validate_slack_request
 def get_interactive_data():
     """
     Description: Endpoint to manage form dialog requests

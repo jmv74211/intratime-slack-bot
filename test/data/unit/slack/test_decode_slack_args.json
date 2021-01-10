@@ -9,10 +9,10 @@
             "channel_name": "slack-bot-and-commands",
             "user_id": "111186ES",
             "user_name": "test",
-            "command": "%2Fsign_up",
+            "command": "/sign_up",
             "text": "",
             "api_app_id": "ARSTL2X6F",
-            "response_url": "https%3A%2F%2Fhooks.slack.com%2Fcommands%2FTS3TR2ZRS%2F1423548973478%2F3vUzipzpGYXjbNfW9JY",
+            "response_url": "https://hooks.slack.com/commands/TS3TR2ZRS/1423548973478/3vUzipzpGYXjbNfW9JY",
             "trigger_id": "1430486983795.887943101876.b822eb857e36ab978f490aef83fb0749"
         }
     }

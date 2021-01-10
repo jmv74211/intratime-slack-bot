@@ -17,7 +17,8 @@ RUN apk add --no-cache bash \
     musl-dev \
     python3-dev \
     openssl-dev \
-    libffi-dev
+    libffi-dev \
+    procps
 
 COPY ./requirements.txt /
 

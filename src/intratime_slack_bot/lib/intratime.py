@@ -488,4 +488,15 @@ def get_worked_time(data):
 
     worked_time = time_utils.get_time_string_from_seconds(num_seconds)
 
+    # Add time not clocked but worked (pre-clocked)
+    if len(data) > 0:
+        last_clock_action = data[-1]['action']
+        last_clock_time = data[-1]['datetime']
+
+        if last_clock_action != OUT_ACTION and last_clock_action != PAUSE_ACTION:
+            last_non_clocked_time = time_utils.get_time_difference(last_clock_time,
+                                                                   time_utils.get_current_date_time(),
+                                                                   time_utils.SECONDS)
+            worked_time = time_utils.get_time_string_from_seconds(num_seconds + last_non_clocked_time)
+
     return worked_time
