@@ -4,35 +4,130 @@
         "parameters": [
             15
         ],
-        "expected_result": ":x: Could not add the user. Status code = 15. Please contact with app administrator :x:"
+        "expected_result": [
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Could not add the user :x:\n *Status*: Failed 15\n *Reason*: Please contact with app administrator\n"
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": "https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/x.png",
+                    "alt_text": "Error"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
     },
     {
         "key": "DELETE_USER_ERROR",
         "parameters": [
             15
         ],
-        "expected_result": ":x: Could not delete the user. Status code = 15. Please contact with app administrator :x:"
+        "expected_result": [
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Could not delete the user :x:\n *Status*: Failed 15\n *Reason*: Please contact with app administrator\n"
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": "https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/x.png",
+                    "alt_text": "Error"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
     },
     {
         "key": "UPDATE_USER_ERROR",
         "parameters": [
             15
         ],
-        "expected_result": ":x: Could not update the user info. Status code = 15. Please contact with app administrator :x:"
+        "expected_result": [
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Could not update the user :x:\n *Status*: Failed 15\n *Reason*: Please contact with app administrator\n"
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": "https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/x.png",
+                    "alt_text": "Error"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
     },
     {
         "key": "CLOCKING_ERROR",
         "parameters": [
             15
         ],
-        "expected_result": ":x: Could not clock your action. Status code = 15. Please contact with app administrator :x:"
+        "expected_result": [
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Could not clock your action :x:\n *Status*: Failed 15\n *Reason*: Please contact with app administrator\n"
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": "https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/x.png",
+                    "alt_text": "Error"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
     },
     {
         "key": "CLOCKING_CHECK_ERROR",
         "parameters": [
             15
         ],
-        "expected_result": ":x: Could not verify your last clocking. Status code = 15. Please, check manually or by consulting your last clocks to verify this clocking action :x:"
+        "expected_result":  [
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Could not verify this clocking request :x:\n *Status*: Failed 15\n *Reason*: Please, check manually that the clock has been done correctly\n"
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": "https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/x.png",
+                    "alt_text": "Error"
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
     },
     {
         "key": "INVALID_CLOCKING_ACTION",
@@ -47,12 +142,12 @@
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": ":x: Could not clock your action :x:\n *Status*: Failed\n *Reason*: test\n"
+                    "text": ":x: Could not clock your action :x:\n *Status*: Failed \n *Reason*: test\n"
                 },
                 "accessory": {
                     "type": "image",
                     "image_url": "https://raw.githubusercontent.com/jmv74211/tools/master/images/repository/intratime-slack-app/ui/x.png",
-                    "alt_text": "Bad clocking action"
+                    "alt_text": "Error"
                 }
             },
             {

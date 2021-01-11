@@ -473,15 +473,17 @@ def process_interactive_data(data):
         # Clock the action
         request_status = intratime.clocking(data['submission']['action'], token, user_data['intratime_mail'])
 
-        if request_status != codes.SUCCESS:
+        if request_status == codes.SUCCESS:
             post_ephemeral_response_message(messages.set_custom_message('CLOCKING_ERROR', [request_status]),
-                                            data['response_url'])
+                                            data['response_url'], 'blocks')
+            return
         # Check the clock action in user history
         clocking_check = intratime.get_user_clocks(token, time_utils.get_past_datetime_from_current_datetime(10),
                                                    time_utils.get_current_date_time(), data['submission']['action'])
         if len(clocking_check) == 0:
             post_ephemeral_response_message(messages.set_custom_message('CLOCKING_CHECK_ERROR', [request_status]),
-                                            data['response_url'])
+                                            data['response_url'], 'blocks')
+            return
 
         clock_message = generate_clock_message({'intratime_mail': user_data['intratime_mail'],
                                                 'datetime': time_utils.get_current_date_time(),
@@ -527,7 +529,7 @@ def process_interactive_data(data):
 
         if request_status != codes.SUCCESS:
             post_ephemeral_response_message(messages.set_custom_message('ADD_USER_ERROR', [request_status]),
-                                            data['response_url'])
+                                            data['response_url'], 'blocks')
 
         post_ephemeral_response_message(messages.ADD_USER_SUCCESS, data['response_url'])
 
@@ -541,7 +543,7 @@ def process_interactive_data(data):
 
         if request_status != codes.SUCCESS:
             post_ephemeral_response_message(messages.set_custom_message('UPDATE_USER_ERROR', [request_status]),
-                                            data['response_url'])
+                                            data['response_url'], 'blocks')
 
         post_ephemeral_response_message(messages.UPDATE_USER_SUCCESS, data['response_url'])
 
@@ -551,6 +553,6 @@ def process_interactive_data(data):
 
         if request_status != codes.SUCCESS:
             post_ephemeral_response_message(messages.set_custom_message('DELETE_USER_ERROR', [request_status]),
-                                            data['response_url'])
+                                            data['response_url'], 'blocks')
 
         post_ephemeral_response_message(messages.DELETE_USER_SUCCESS, data['response_url'])

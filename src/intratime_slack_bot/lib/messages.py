@@ -153,22 +153,7 @@ def set_custom_message(key, parameters):
     str:
         Custom slack message
     """
-
-    if key == 'ADD_USER_ERROR':
-        return f":x: Could not add the user. Status code = {parameters[0]}. Please contact with app administrator :x:"
-    elif key == 'DELETE_USER_ERROR':
-        return f":x: Could not delete the user. Status code = {parameters[0]}. Please contact with app administrator"\
-                " :x:"
-    elif key == 'UPDATE_USER_ERROR':
-        return f":x: Could not update the user info. Status code = {parameters[0]}. Please contact with app " \
-                "administrator :x:"
-    elif key == 'CLOCKING_ERROR':
-        return f":x: Could not clock your action. Status code = {parameters[0]}. Please contact with app " \
-                "administrator :x:"
-    elif key == 'CLOCKING_CHECK_ERROR':
-        return f":x: Could not verify your last clocking. Status code = {parameters[0]}. Please, check manually or " \
-                "by consulting your last clocks to verify this clocking action :x:"
-    elif key == 'INVALID_CLOCKING_ACTION':
+    def get_error_template(title, status_code, error_description):
         return [
             {
                 "type": "divider"
@@ -177,22 +162,37 @@ def set_custom_message(key, parameters):
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f":x: Could not clock your action :x:\n *Status*: Failed\n *Reason*: {parameters[0]}\n"
+                    "text": f":x: {title} :x:\n *Status*: Failed {status_code}\n *Reason*: {error_description}\n"
                 },
                 "accessory": {
                     "type": "image",
                     "image_url": f"{IMAGE_BASE_URL}x.png",
-                    "alt_text": "Bad clocking action"
+                    "alt_text": "Error"
                 }
             },
             {
                 "type": "divider"
             }
         ]
+
+
+    if key == 'ADD_USER_ERROR':
+        return get_error_template('Could not add the user', parameters[0], 'Please contact with app administrator')
+    elif key == 'DELETE_USER_ERROR':
+        return get_error_template('Could not delete the user', parameters[0], 'Please contact with app administrator')
+    elif key == 'UPDATE_USER_ERROR':
+        return get_error_template('Could not update the user', parameters[0], 'Please contact with app administrator')
+    elif key == 'CLOCKING_ERROR':
+        return get_error_template('Could not clock your action', parameters[0], 'Please contact with app administrator')
+    elif key == 'CLOCKING_CHECK_ERROR':
+        return get_error_template('Could not verify this clocking request', parameters[0], 'Please, check manually ' \
+                                  'that the clock has been done correctly')
+    elif key == 'INVALID_CLOCKING_ACTION':
+        return get_error_template('Could not clock your action', '', parameters[0])
     elif key == 'WORKED_TIME':
         return f":timer_clock: Your working time {parameters[0]} is *{parameters[1]}* :timer_clock:"
     else:
-        return ""
+        return ''
 
 # ----------------------------------------------------------------------------------------------------------------------
 

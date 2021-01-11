@@ -228,7 +228,7 @@ def process_request(func):
         data['user'] = {'id': data['user_id'], 'name': data['user_name']}
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        url = f"{settings.PROTOCOL}://localhost:{settings.SLACK_SERVICE_PORT}{warehouse.INTERACTIVE_REQUEST}"
+        url = f"{settings.PROTOCOL}://{settings.APP_DOMAIN}{warehouse.INTERACTIVE_REQUEST}"
         data = urllib.parse.urlencode({'payload': data})
 
         requests.post(url, data=data, headers=headers)
