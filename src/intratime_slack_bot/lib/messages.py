@@ -175,7 +175,6 @@ def set_custom_message(key, parameters):
             }
         ]
 
-
     if key == 'ADD_USER_ERROR':
         return get_error_template('Could not add the user', parameters[0], 'Please contact with app administrator')
     elif key == 'DELETE_USER_ERROR':
@@ -185,7 +184,7 @@ def set_custom_message(key, parameters):
     elif key == 'CLOCKING_ERROR':
         return get_error_template('Could not clock your action', parameters[0], 'Please contact with app administrator')
     elif key == 'CLOCKING_CHECK_ERROR':
-        return get_error_template('Could not verify this clocking request', parameters[0], 'Please, check manually ' \
+        return get_error_template('Could not verify this clocking request', parameters[0], 'Please, check manually '
                                   'that the clock has been done correctly')
     elif key == 'INVALID_CLOCKING_ACTION':
         return get_error_template('Could not clock your action', '', parameters[0])

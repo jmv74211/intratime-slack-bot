@@ -473,7 +473,7 @@ def process_interactive_data(data):
         # Clock the action
         request_status = intratime.clocking(data['submission']['action'], token, user_data['intratime_mail'])
 
-        if request_status == codes.SUCCESS:
+        if request_status != codes.SUCCESS:
             post_ephemeral_response_message(messages.set_custom_message('CLOCKING_ERROR', [request_status]),
                                             data['response_url'], 'blocks')
             return
