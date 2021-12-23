@@ -1,0 +1,15 @@
+version: '3'
+services:
+    mysql-service:
+        image: mysql:8.0.27
+        volumes:
+            - ./deploy/db_data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD
+        ports:
+            - 3306:3306
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - 8080:8080
