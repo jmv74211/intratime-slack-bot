@@ -2,19 +2,25 @@
 Clockzy tables schema definitions.
 """
 
-USER_TABLE = """ \
+USER_TABLE = 'user'
+CLOCK_TABLE = 'clock'
+COMMANDS_HISTORY_TABLE = 'command_history'
+CONFIG_TABLE = 'config'
+ALIAS_TABLE = 'alias'
+
+USER_TABLE_SCHEMA = """ \
     CREATE TABLE IF NOT EXISTS user (
         id VARCHAR(50) NOT NULL,
         user_name VARCHAR(100) NOT NULL,
-        password VARCHAR(100) NOT NULL,
-        mail VARCHAR(200) NOT NULL,
+        password VARCHAR(100),
+        email VARCHAR(200),
         entry_data DATETIME,
         last_registration_date DATETIME,
         PRIMARY KEY (id)
     )
 """
 
-CLOCK_TABLE = """ \
+CLOCK_TABLE_SCHEMA = """ \
     CREATE TABLE IF NOT EXISTS clock (
         id INT NOT NULL AUTO_INCREMENT,
         user_id VARCHAR(50),
@@ -25,7 +31,7 @@ CLOCK_TABLE = """ \
     )
 """
 
-COMMANDS_HISTORY_TABLE = """ \
+COMMANDS_HISTORY_TABLE_SCHEMA = """ \
     CREATE TABLE IF NOT EXISTS commands_history (
         id INT NOT NULL AUTO_INCREMENT,
         user_id VARCHAR(50),
@@ -37,7 +43,7 @@ COMMANDS_HISTORY_TABLE = """ \
     )
 """
 
-CONFIG_TABLE = """ \
+CONFIG_TABLE_SCHEMA = """ \
     CREATE TABLE IF NOT EXISTS config (
         user_id VARCHAR(50),
         intratime_integration BOOLEAN NOT NULL,
@@ -45,10 +51,11 @@ CONFIG_TABLE = """ \
     )
 """
 
-ALIAS_TABLE = """ \
+ALIAS_TABLE_SCHEMA = """ \
     CREATE TABLE IF NOT EXISTS alias (
         user_name VARCHAR(100) NOT NULL,
         alias VARCHAR(100) NOT NULL,
-        PRIMARY KEY (user_name)
+        PRIMARY KEY (alias),
+        FOREIGN KEY (user_name) REFERENCES user(user_name)
     )
 """
