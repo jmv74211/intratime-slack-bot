@@ -27,24 +27,56 @@ class Database:
         self.password = password
         self.database_name = database_name
         self.port = port
+        self.database_connection = None
 
-        self.database_connection = self.connect()
+    def connect(self):
+        """Create the connection to the database."""
+        try:
+            if self.database_connection is None:
+                self.database_connection = pymysql.connect(host=self.host, user=self.user, password=self.password,
+                                                           database=self.database_name, port=self.port)
+        except pymysql.MySQLError:
+            print(f"Could not connect to the {self.host}:{self.port} {self.database_name} database")
 
-    def run_query(self, query, connection=None):
+    def run_query(self, query):
         """Run a query string in the database
 
         Args:
             query (str): Raw query to execute.
-            connection (pymysql.connections.Connection): Database connection to use.
 
         Returns:
-            pymysql.cursors.Cursor: Cursor object with the query results.
+            - List(tuple): If SELECT query, returns the query results.
+            - int: If non SELECT query, return the number of affected rows.
         """
-        connection = connection if connection else self.database_connection
-        db_cursor = connection.cursor()
-        db_cursor.execute(query)
+        try:
+            self.connect()
+            with self.database_connection.cursor() as cursor:
+                # If SELECT query, then execute the query and return the results
+                if query.startswith('SELECT') or query.startswith('select'):
+                    query_results = []
 
-        return db_cursor
+                    cursor.execute(query)
+                    result = cursor.fetchall()
+
+                    for row in result:
+                        query_results.append(row)
+
+                    return query_results
+
+                # If no SELECT query, then execute the query and return the number of affected rows
+                else:
+                    try:
+                        cursor.execute(query)
+                        self.database_connection.commit()
+
+                        return cursor.rowcount
+
+                    except pymysql.MySQLError as e:
+                        self.database_connection.rollback()
+                        print(f"Error when executing query: {query}. Reason {e}")
+                        return 0
+        finally:
+            self.close_connection()
 
     def create_database(self, database_name):
         """Create the specified database
@@ -53,64 +85,13 @@ class Database:
             database_name (str): Name of the database to create.
         """
         connection = pymysql.connect(host=self.host, user=self.user, password=self.password, port=self.port)
-        self.run_query(f"CREATE DATABASE IF NOT EXISTS {database_name};", connection=connection)
+        with connection as cursor:
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name};")
+            connection.commit()
+        connection.close()
 
-    def connect(self):
-        """Create the connection to the database.
-
-        Returns:
-            connection (pymysql.connections.Connection): Database connection object.
-        """
-        return pymysql.connect(host=self.host, user=self.user, password=self.password, database=self.database_name,
-                               port=self.port)
-
-    def update(self, query):
-        """Run an operation involving a modification to the database. For example, INSERT, UPDATE, DELETE... queries.
-
-        In the event of an error, the operation will be rolled back.
-
-        Args:
-            query (str): Raw query to execute.
-        """
-        try:
-            self.run_query(query)
-            self.database_connection.commit()
-        except:
-            self.database_connection.rollback()
-
-    def get_one(self, query):
-        """Run a query and returns the first result obtained.
-
-        Args:
-            query (str): Raw query to execute.
-
-        Returns:
-            Array: Array with the results. Each element corresponds to the value of a field.
-        """
-        return self.run_query(query).fetchone()
-
-    def get_all(self, query):
-        """Run a query and returns the results obtained.
-
-        Args:
-            query (str): Raw query to execute.
-
-        Returns:
-            Array: Query results. Each element corresponds to the value of a field.
-        """
-        return self.run_query(query).fetchall()
-
-    def get_row_count(self, query):
-        """Run a query and returns the number of involved rows.
-
-        Args:
-            query (str): Raw query to execute.
-
-        Returns:
-            int: Number of involved rows.
-        """
-        return self.run_query(query).rowcount()
-
-    def close(self):
+    def close_connection(self):
         """Close the database connection"""
-        self.database_connection.close()
+        if self.database_connection:
+            self.database_connection.close()
+            self.database_connection = None
