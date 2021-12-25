@@ -5,7 +5,6 @@ from clockzy.lib.models.clock import Clock
 from clockzy.lib.models.command_history import CommandHistory
 from clockzy.lib.models.config import Config
 from clockzy.lib.models.alias import Alias
-from time import sleep
 
 
 @pytest.fixture

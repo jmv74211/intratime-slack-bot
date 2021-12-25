@@ -1,6 +1,7 @@
 from clockzy.lib.utils.time import get_current_date_time
 from clockzy.lib.db.db_schema import USER_TABLE
-from clockzy.lib.db.database_interface import run_query, item_exists
+from clockzy.lib.handlers.codes import ITEM_ALREADY_EXISTS, ITEM_NOT_EXISTS
+from clockzy.lib.db.database_interface import run_query_getting_status, item_exists
 
 
 class User:
@@ -37,19 +38,43 @@ class User:
                f"entry_data: {self.entry_data}, last_registration_date: {self.last_registration_date}"
 
     def save(self):
-        """Save the user information in the database."""
+        """Save the user information in the database.
+
+        Returns:
+            int: Operation status code..
+        """
         add_user_query = f"INSERT INTO {USER_TABLE} VALUES ('{self.id}', '{self.user_name}', '{self.password}', " \
                          f"'{self.email}', '{self.entry_data}', '{self.last_registration_date}');"
-        run_query(add_user_query)
+
+        if item_exists({'id': self.id}, USER_TABLE):
+            return ITEM_ALREADY_EXISTS
+
+        return run_query_getting_status(add_user_query)
 
     def delete(self):
-        """Delete the user from the database."""
+        """Delete the user from the database.
+
+        Returns:
+            int: Operation status code..
+        """
         delete_user_query = f"DELETE FROM {USER_TABLE} WHERE id='{self.id}'"
-        run_query(delete_user_query)
+
+        if not item_exists({'id': self.id}, USER_TABLE):
+            return ITEM_NOT_EXISTS
+
+        return run_query_getting_status(delete_user_query)
 
     def update(self):
-        """Update the current user information from the database."""
+        """Update the current user information from the database.
+
+        Returns:
+            int: Operation status code..
+        """
         update_user_query = f"UPDATE {USER_TABLE} SET id='{self.id}', user_name='{self.user_name}', " \
                             f"password='{self.password}', email='{self.email}', entry_data='{self.entry_data}', " \
                             f"last_registration_date='{self.last_registration_date}' WHERE id='{self.id}'"
-        run_query(update_user_query)
+
+        if not item_exists({'id': self.id}, USER_TABLE):
+            return ITEM_NOT_EXISTS
+
+        return run_query_getting_status(update_user_query)
