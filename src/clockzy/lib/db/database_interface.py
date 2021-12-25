@@ -1,13 +1,14 @@
 """
 Module to group calls to the database.
 """
+from pymysql import MySQLError
 
 from clockzy.lib.db.database import Database
-from pymysql import MySQLError
+from clockzy.lib.handlers.codes import SUCCESS, OPERATION_ERROR
 
 
 def run_query(query):
-    """Run a non-commit query in the database.
+    """Execute the query in the database.
 
     Args:
         query (String): Raw query to execute.
@@ -15,6 +16,8 @@ def run_query(query):
     Returns:
         - List(tuple): If SELECT query, returns the query results.
         - int: If non SELECT query, return the number of affected rows.
+    Raises:
+        MySQLError: If it is not a SELECT query and no row has been affected.
     """
     db = Database()
     results = db.run_query(query)
@@ -23,6 +26,24 @@ def run_query(query):
         raise MySQLError(f"The {query} query has not affected any row")
 
     return results
+
+
+def run_query_getting_status(query):
+    """Execute a query and get the result code.
+
+    Note: Do not use it when you need to get the results of the query (SELECT results).
+
+    Args:
+        query (String): Raw query to execute.
+
+    Returns:
+        int: Code status.
+    """
+    try:
+        run_query(query)
+        return SUCCESS
+    except MySQLError:
+        return OPERATION_ERROR
 
 
 def get_last_insert_id(table_name, identifier='id'):
@@ -46,7 +67,7 @@ def get_last_insert_id(table_name, identifier='id'):
     return results[0][0] if len(results) > 0 else 0
 
 
-def build_exist_query_from_parameters(parameters, table_name):
+def build_select_query_from_object_parameters(parameters, table_name):
     """Build a SELECT query, using the item parameters as conditions (used in WHERE).
 
     Args:
@@ -79,6 +100,22 @@ def item_exists(object_parameters, table_name):
     Returns:
         boolean: True if there is one or more elements, False otherwise.
     """
-    query = build_exist_query_from_parameters(object_parameters, table_name)
+    query = build_select_query_from_object_parameters(object_parameters, table_name)
 
     return len(run_query(query)) > 0
+
+
+def get_database_data_from_objects(object_parameters, table_name):
+    """Get the DB results from a query built with specified object parameters.
+
+    Args:
+        object_parameters (dict): Dictionary that contains the object parameters ({'colum_name': 'value', ...})
+        table_name (str): Table where to make the search.
+
+    Returns:
+        list(tuple): Query results
+
+    """
+    result = run_query(build_select_query_from_object_parameters(object_parameters, table_name))
+
+    return result if len(result) > 0 else []
