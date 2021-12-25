@@ -1,7 +1,8 @@
 import pytest
 
 from clockzy.lib.models.command_history import CommandHistory
-from clockzy.lib.test_framework.database import item_exists, intratime_user_parameters, command_history_parameters
+from clockzy.lib.db.database_interface import item_exists
+from clockzy.lib.test_framework.database import intratime_user_parameters, command_history_parameters
 from clockzy.lib.db.db_schema import COMMANDS_HISTORY_TABLE
 
 

@@ -2,7 +2,8 @@ import pytest
 from pymysql import MySQLError
 
 from clockzy.lib.models.user import User
-from clockzy.lib.test_framework.database import item_exists, intratime_user_parameters, no_intratime_user_parameters
+from clockzy.lib.db.database_interface import item_exists
+from clockzy.lib.test_framework.database import intratime_user_parameters, no_intratime_user_parameters
 from clockzy.lib.db.db_schema import USER_TABLE
 
 

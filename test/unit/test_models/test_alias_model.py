@@ -1,7 +1,8 @@
 import pytest
 
 from clockzy.lib.models.alias import Alias
-from clockzy.lib.test_framework.database import item_exists, intratime_user_parameters, alias_parameters
+from clockzy.lib.db.database_interface import item_exists
+from clockzy.lib.test_framework.database import intratime_user_parameters, alias_parameters
 from clockzy.lib.db.db_schema import ALIAS_TABLE
 
 

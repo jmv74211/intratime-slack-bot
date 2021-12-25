@@ -1,6 +1,6 @@
 from clockzy.lib.utils.time import get_current_date_time
 from clockzy.lib.db.db_schema import USER_TABLE
-from clockzy.lib.db.database_interface import run_query
+from clockzy.lib.db.database_interface import run_query, item_exists
 
 
 class User:

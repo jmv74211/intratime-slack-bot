@@ -1,7 +1,8 @@
 import pytest
 
 from clockzy.lib.models.config import Config
-from clockzy.lib.test_framework.database import item_exists, intratime_user_parameters, config_parameters
+from clockzy.lib.db.database_interface import item_exists
+from clockzy.lib.test_framework.database import intratime_user_parameters, config_parameters
 from clockzy.lib.db.db_schema import CONFIG_TABLE
 
 
