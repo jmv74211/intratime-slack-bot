@@ -1,4 +1,4 @@
-cryptography==3.3.2
+cryptography==39.0.1
 freezegun==1.0.0
 tavern==1.12.2
 requests==2.24.0
